@@ -1,7 +1,7 @@
 import unittest
 import filecmp
 from shutil import copyfile
-from new_convertor import *
+from yaml_converter import *
 import sys
 
 def files_cmp(ref,out):
