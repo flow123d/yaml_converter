@@ -170,6 +170,7 @@ class TestActions(unittest.TestCase):
         rev_file = self.make_test_file(".rev.yaml")
         rrf_file = self.make_test_file(".rrf.yaml")
 
+        changes.new_version("2.0.0", automatic_rule=False)
         changes.new_version("ZZ.ZZ.ZZ", automatic_rule=False)
         with open(in_file, "r") as f:
             root = yml.load(f)

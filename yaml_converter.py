@@ -183,7 +183,6 @@ class Changes:
         if self.current_version is not None:
             # not the first call, so we have both initial and final version of current changes frame
             assert version is not None
-            assert self.current_version < version
             if automatic_rule and version is not None:
                 assert re.match('[^.]*\.[^.]*\.[^.]*', version)
                 assert re.match('[^.]*\.[^.]*\.[^.]*', self.current_version)
@@ -233,8 +232,7 @@ class Changes:
 
         self._reversed = copy.deepcopy(self._changes)
         self._reversed.reverse()
-        for v0, v1, changes in self._reversed:
-            changes.reverse()
+        self._reversed = [ (v1, v0, list(reversed(changes))) for v0, v1, changes in self._reversed]
 
 
     def intersecting_intervals(self, a, b):
@@ -288,6 +286,8 @@ class Changes:
 
         if in_version > out_version:
             raise Exception("Wrong versions order, in_version: %s, out_version: %s."%(in_version, out_version))
+        if reversed :
+            in_version, out_version = out_version, in_version
 
         # reverse
         if not reversed:
@@ -295,11 +295,15 @@ class Changes:
         else:
             changes = self._reversed
 
-        active = False
+        active = 0
         actions=[]
         self.tree = tree
         for v0, v1, change_list in changes:
-            if self.intersecting_intervals( (in_version, out_version), (v0, v1)):
+            if in_version == v0:
+                active += 1
+            if out_version == v0:
+                active += 2
+            if active == 1:
                 for forward, backward, ac_name, line_num in change_list:
                     if reversed:
                         action=backward
@@ -310,6 +314,11 @@ class Changes:
                     if self.changed:
                         actions.append( (ac_name, line_num) )
                     self.tree = self.unify_tree_dfs(self.tree)
+        if active in [0,1]:
+            logging.warning("Version %s is not in the change list."%out_version)
+        if active in [0,3]:
+            logging.warning("Version %s is not in the change list."%in_version)
+
         return actions
 
 

@@ -12,7 +12,7 @@ Features:
 - can be applied to the input format specification and check that it produce target format specification
 
 '''
-from new_convertor import PathSet, Changes, CommentedMap, CommentedSeq, CommentedScalar
+from yaml_converter import PathSet, Changes, CommentedMap, CommentedSeq, CommentedScalar
 
 def make_changes():
     changes = Changes()
