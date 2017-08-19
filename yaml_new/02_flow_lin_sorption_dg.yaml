@@ -5,17 +5,16 @@ problem: !Coupling_Sequential
     mesh_file: ./input/compatible.msh
     regions:
       - !Union
-        name: subset
-        regions:
-          - 2d
-          - 1d
-      - !Union
         name: .sides
         regions:
           - .2d
           - .1d
+      - !Union
+        name: subset
+        regions:
+          - 2d
+          - 1d
   flow_equation: !Flow_Darcy_MH
-    output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-12
@@ -34,19 +33,26 @@ problem: !Coupling_Sequential
         bc_pressure: !FieldFormula
           value: x
     balance: {}
+    output_stream:
+      file: ./test2.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
       fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
         - region_id
-    output_stream:
-      file: ./test2.pvd
-      format: !vtk
-        variant: ascii
-      name: flow_output_stream
   solute_equation: !Coupling_OperatorSplitting
     transport: !Solute_AdvectionDiffusion_DG
+      solvent_density: 1000
+      dg_order: 1
+      solver: !Petsc
+      output:
+        fields:
+          - conc
+          - region_id
       input_fields:
         - region: .sides
           bc_conc: 1
@@ -61,20 +67,13 @@ problem: !Coupling_Sequential
         - region: .sides
           time: 5
           bc_conc: 0
-      solver: !Petsc
-      dg_order: 1
-      solvent_density: 1000
-      output:
-        fields:
-          - conc
-          - region_id
     output_stream:
       file: ./transport_dg.pvd
       format: !vtk
         variant: ascii
-      name: transport_output_stream
       times:
         - step: 1
+      name: transport_output_stream
     substances:
       - name: A
         molar_mass: 2

@@ -8,7 +8,6 @@ problem: !Coupling_Sequential
   mesh:
     mesh_file: ${INPUT}/test10.msh
   flow_equation: !Flow_Richards_LMH
-    output_specific:
     input_fields:
       - region: ALL
         storativity: 1.0
@@ -28,6 +27,13 @@ problem: !Coupling_Sequential
       linear_solver: !Petsc
         a_tol: 1.0e-07
     n_schurs: 2
+    output_stream:
+      file: ./test10.pvd
+      format: !vtk
+        variant: ascii
+      times:
+        - step: 0.1
+      name: flow_output_stream
     output:
       fields:
         - pressure_p0
@@ -36,10 +42,3 @@ problem: !Coupling_Sequential
     balance:
       cumulative: true
     time: *anchor2
-    output_stream: 
-      file: ./test10.pvd
-      format: !vtk
-        variant: ascii
-      name: flow_output_stream
-      times:
-        - step: 0.1

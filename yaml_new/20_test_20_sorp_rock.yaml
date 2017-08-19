@@ -1,12 +1,10 @@
 flow123d_version: 2.0.0
 output_streams:
-  - &anchor1
-    file: test_20.pvd
+  - file: test_20.pvd
     format: !vtk
       variant: ascii
     name: flow_output_stream
-  - &anchor2
-    file: transport_test_20_sorp_rock.pvd
+  - file: transport_test_20_sorp_rock.pvd
     format: !vtk
       variant: ascii
     name: transport_output_stream
@@ -15,7 +13,6 @@ problem: !Coupling_Sequential
   mesh:
     mesh_file: ${INPUT}/test_20.msh
   flow_equation: !Flow_Darcy_MH
-    output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-07
@@ -26,17 +23,24 @@ problem: !Coupling_Sequential
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: x
+    output_stream:
+      file: test_20.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
       pressure_p0: flow_output_stream
       pressure_p1: flow_output_stream
       velocity_p0: flow_output_stream
     balance: {}
-    output_stream: 
-      file: test_20.pvd
-      format: !vtk
-        variant: ascii
-      name: flow_output_stream
   solute_equation: !Coupling_OperatorSplitting
+    substances:
+      - A
+      - As-lin
+      - B
+      - Bs-lang
+      - C
+      - Cs-freund
     transport: !Solute_Advection_FV
       input_fields:
         - region: ALL
@@ -46,16 +50,9 @@ problem: !Coupling_Sequential
         - region: .BOUNDARY
           bc_conc: !FieldFormula
             value: 0.05*t
-    substances:
-      - A
-      - As-lin
-      - B
-      - Bs-lang
-      - C
-      - Cs-freund
     output:
       conc_mobile_p0: transport_output_stream
-      output_stream: 
+      output_stream:
         file: transport_test_20_sorp_rock.pvd
         format: !vtk
           variant: ascii

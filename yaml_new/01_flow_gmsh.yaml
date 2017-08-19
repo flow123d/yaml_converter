@@ -5,20 +5,18 @@ problem: !Coupling_Sequential
     mesh_file: ./input/test1_new.msh
     regions:
       - !Union
-        name: fractures
-        regions:
-          - 2d_fracture_1
-          - 2d_fracture_2
-      - !Union
         name: dirichlet_boundary
         regions:
           - .1d_channel
           - .2d_fracture_1
           - .2d_fracture_2
           - .3d_cube
+      - !Union
+        name: fractures
+        regions:
+          - 2d_fracture_1
+          - 2d_fracture_2
   flow_equation: !Flow_Darcy_MH
-    output_specific:
-      raw_flow_output: ./raw_output.txt
     nonlinear_solver:
       linear_solver: !Petsc
         r_tol: 1.0e-10
@@ -48,14 +46,16 @@ problem: !Coupling_Sequential
         bc_pressure: !FieldFormula
           value: x-z
     balance: {}
+    output_specific:
+      raw_flow_output: ./raw_output.txt
+    output_stream:
+      file: ./test1.msh
+      format: !gmsh
+        variant: ascii
+      name: flow_output_stream
     output:
       fields:
         - piezo_head_p0
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    output_stream: 
-      file: ./test1.msh
-      format: !gmsh
-        variant: ascii
-      name: flow_output_stream

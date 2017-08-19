@@ -16,7 +16,6 @@ problem: !Coupling_Sequential
         element_list:
           - 721
   flow_equation: !Flow_Darcy_MH
-    output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-12
@@ -30,19 +29,23 @@ problem: !Coupling_Sequential
       - rid: 7
         cross_section: 1
         conductivity: 1
+    output_stream:
+      file: ./flow_test16.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
       fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
     balance: {}
-    output_stream: 
-      file: ./flow_test16.pvd
-      format: !vtk
-        variant: ascii
-      name: flow_output_stream
   solute_equation: !Coupling_OperatorSplitting
+    dual_porosity: false
     transport: !Solute_AdvectionDiffusion_DG
+      solver: !Petsc
+        a_tol: 1.0e-12
+        r_tol: 1.0e-12
       input_fields:
         - region: .IMPLICIT_BOUNDARY
           bc_conc: 0
@@ -63,17 +66,13 @@ problem: !Coupling_Sequential
           time: 4
           porosity: !FieldFormula
             value: 4/t
-      solver: !Petsc
-        a_tol: 1.0e-12
-        r_tol: 1.0e-12
-    dual_porosity: false
-    output_stream: 
+    output_stream:
       file: ./transport_test16.pvd
       format: !vtk
         variant: ascii
-      name: transport_output_stream
       times:
         - step: 1
+      name: transport_output_stream
     substances:
       - conc
     time:

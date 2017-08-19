@@ -5,17 +5,16 @@ problem: !Coupling_Sequential
     mesh_file: ./input/compatible.msh
     regions:
       - !Union
-        name: subset
-        regions:
-          - 2d
-          - 1d
-      - !Union
         name: .sides
         regions:
           - .2d
           - .1d
+      - !Union
+        name: subset
+        regions:
+          - 2d
+          - 1d
   flow_equation: !Flow_Darcy_MH
-    output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-12
@@ -33,18 +32,35 @@ problem: !Coupling_Sequential
         bc_pressure: !FieldFormula
           value: x
     balance: {}
-    output:
-      fields:
-        - pressure_p0
-        - pressure_p1
-        - velocity_p0
     output_stream:
       file: ./test2.pvd
       format: !vtk
         variant: ascii
       name: flow_output_stream
+    output:
+      fields:
+        - pressure_p0
+        - pressure_p1
+        - velocity_p0
   solute_equation: !Coupling_OperatorSplitting
+    output_stream:
+      file: ./transport-implicit.pvd
+      format: !vtk
+        variant: ascii
+      times:
+        - step: 0.5
+      name: transport_output_stream
+    substances:
+      - A
+      - B
+    time:
+      end_time: 5.0
+      init_dt: 0.5
     transport: !Solute_AdvectionDiffusion_DG
+      dg_variant: symmetric
+      solver: !Petsc
+        a_tol: 1.0e-12
+        r_tol: 1.0e-12
       input_fields:
         - region: .sides
           bc_conc: !FieldFormula
@@ -57,22 +73,5 @@ problem: !Coupling_Sequential
           porosity: 0.25
         - region: 1d
           dg_penalty: 10
-      solver: !Petsc
-        a_tol: 1.0e-12
-        r_tol: 1.0e-12
-      dg_variant: symmetric
-    output_stream:
-      file: ./transport-implicit.pvd
-      format: !vtk
-        variant: ascii
-      name: transport_output_stream
-      times:
-        - step: 0.5
-    substances:
-      - A
-      - B
-    time:
-      end_time: 5.0
-      init_dt: 0.5
     balance:
       cumulative: true

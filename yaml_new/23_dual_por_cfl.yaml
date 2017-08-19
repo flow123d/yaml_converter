@@ -6,7 +6,6 @@ problem: !Coupling_Sequential
     # mesh_file:"./input/narrow_2d_chanel.msh"
     mesh_file: ./input/dual_por.msh
   flow_equation: !Flow_Darcy_MH
-    output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-07
@@ -16,23 +15,17 @@ problem: !Coupling_Sequential
       - region: .BOUNDARY
         bc_type: dirichlet
         bc_pressure: 0
+    output_stream:
+      file: ./dual_por_flow.pvd
+      format: !vtk
+        variant: ascii
     output:
       fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
     balance: {}
-    output_stream:
-      file: ./dual_por_flow.pvd
-      format: !vtk
-        variant: ascii
   solute_equation: !Coupling_OperatorSplitting
-    transport: !Solute_Advection_FV
-      input_fields:
-        - region: BULK
-          init_conc:
-            - 1.0
-          porosity: 0.5
     substances:
       - A
     time:
@@ -42,6 +35,12 @@ problem: !Coupling_Sequential
       a_tol: 1.0e-07
       r_tol: 1.0e-07
       # options:"-ksp_type gmres -ksp_monitor"
+    transport: !Solute_Advection_FV
+      input_fields:
+        - region: BULK
+          init_conc:
+            - 1.0
+          porosity: 0.5
     reaction_term: !DualPorosity
       COMMENT: !Sorption
         decays:
@@ -96,6 +95,6 @@ problem: !Coupling_Sequential
       file: dual_por_transport.pvd
       format: !vtk
         variant: ascii
-# problem
       times:
         - step: 1.0
+# problem

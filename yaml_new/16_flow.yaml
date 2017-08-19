@@ -4,7 +4,6 @@ problem: !Coupling_Sequential
   mesh:
     mesh_file: ./input/test16.msh
   flow_equation: !Flow_Darcy_MH
-    output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-12
@@ -18,6 +17,11 @@ problem: !Coupling_Sequential
       - region: BULK
         cross_section: 1
         anisotropy: 1
+    output_stream:
+      file: ./flow_test16.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
       fields:
         - pressure_p0
@@ -28,12 +32,9 @@ problem: !Coupling_Sequential
       end_time: 5.7
       max_dt: 1.0
       min_dt: 1.0
-    output_stream: 
-      file: ./flow_test16.pvd
-      format: !vtk
-        variant: ascii
-      name: flow_output_stream
   solute_equation: !Coupling_OperatorSplitting
+    boundary_file: ./input/test16.tbc
+    initial_file: ./input/test16.tic
     transport: !Solute_Advection_FV
       input_fields:
         - region: .BOUNDARY
@@ -50,15 +51,13 @@ problem: !Coupling_Sequential
           sources_conc: !FieldElementwise
             gmsh_file: input/test16_sources.msh
             field_name: concentration
-    boundary_file: ./input/test16.tbc
-    initial_file: ./input/test16.tic
-    output_stream: 
+    output_stream:
       file: ./transport_test16.pvd
       format: !vtk
         variant: ascii
-      name: transport_output_stream
       times:
         - step: 0.8
+      name: transport_output_stream
     sources_file: ./input/test16.tso
     substances:
       - conc

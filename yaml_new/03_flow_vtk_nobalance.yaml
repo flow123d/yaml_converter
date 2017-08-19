@@ -4,7 +4,6 @@ problem: !Coupling_Sequential
     sources).'
   mesh:
     mesh_file: ./input/mesh_with_boundary.msh
-  # mesh
     regions:
       - !Union
         name: 1d_domain
@@ -14,7 +13,6 @@ problem: !Coupling_Sequential
           - 1d_left_branch
   # mesh
   flow_equation: !Flow_Darcy_MH
-    output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-12
@@ -43,6 +41,13 @@ problem: !Coupling_Sequential
       format: !vtk
         variant: ascii
   solute_equation: !Coupling_OperatorSplitting
+    substances:
+      - name: age
+        molar_mass: 0.018
+      # water age
+      - name: U235
+        molar_mass: 0.235
+      # uranium 235
     transport: !Solute_Advection_FV
       input_fields:
         - region: ALL
@@ -51,21 +56,15 @@ problem: !Coupling_Sequential
           sources_density:
             - 0.25
             - 0
-          # source is in the whole volume (l+s) -> times porosity
+        # source is in the whole volume (l+s) -> times porosity
         - region: .BOUNDARY
           bc_conc:
             - 0.0
             - 1.0
-    substances:
-      - name: age
-        molar_mass: 0.018
-      # water age
-      - name: U235
-        molar_mass: 0.235
-      # uranium 235
     time:
       end_time: 1000000.0
-    balance: {add_output_times: false}
+    balance:
+      add_output_times: false
     reaction_term: !DualPorosity
       input_fields:
         - region: ALL
@@ -118,7 +117,7 @@ problem: !Coupling_Sequential
       file: transport.pvd
       format: !vtk
         variant: ascii
-  # secondary_equation
-# problem
       times:
         - step: 500000.0
+  # secondary_equation
+# problem

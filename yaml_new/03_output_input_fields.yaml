@@ -12,12 +12,10 @@ problem: !Coupling_Sequential
           - 1d_lower
           - 1d_left_branch
   flow_equation: !Flow_Darcy_MH
-    output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-12
         r_tol: 1.0e-12
-    # primary equation
     input_fields:
       - region: 1d_domain
         conductivity: 10
@@ -42,6 +40,9 @@ problem: !Coupling_Sequential
       format: !vtk
         variant: ascii
   solute_equation: !Coupling_OperatorSplitting
+    substances:
+      - age
+      - U235
     transport: !Solute_Advection_FV
       input_fields:
         - region: ALL
@@ -53,9 +54,6 @@ problem: !Coupling_Sequential
         fields:
           - conc
           - porosity
-    substances:
-      - age
-      - U235
     reaction_term: !DualPorosity
       input_fields:
         - region: ALL

@@ -5,7 +5,6 @@ problem: !Coupling_Sequential
   mesh:
     mesh_file: ./input/narrow_2d_chanel.msh
   flow_equation: !Flow_Darcy_MH
-    output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-07
@@ -18,17 +17,27 @@ problem: !Coupling_Sequential
       - region: .right
         bc_type: dirichlet
         bc_pressure: 0
+    output_stream:
+      file: ./flow.pvd
+      format: !vtk
+        variant: ascii
     output:
       fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
     balance: {}
-    output_stream:
-      file: ./flow.pvd
-      format: !vtk
-        variant: ascii
   solute_equation: !Coupling_OperatorSplitting
+    substances:
+      - A
+      - B
+    time:
+      end_time: 10
+      # init_dt:1.0
+    solver: !Petsc
+      a_tol: 1.0e-07
+      r_tol: 1.0e-07
+      # options:"-ksp_type gmres -ksp_monitor"
     transport: !Solute_Advection_FV
       input_fields:
         - region: BULK
@@ -48,44 +57,6 @@ problem: !Coupling_Sequential
           bc_conc:
             - 0.0
             - 0.0
-      #         TYPE:"RadioactiveDecay",
-      #         decays:[
-      #           {
-      #             radionuclide:"A",
-      #             half_life:1.0,
-      #             products:"B"
-      #           }
-      #         ]
-      #         TYPE:"Sorption",
-      #         solvent_density:1.0,
-      #         substances:["A"],
-      #         solubility:[1.0],
-      #         input_fields:[
-      #           {
-      #             time:0.0,
-      #             r_set:"ALL",
-      #             rock_density:1.0,
-      #             sorption_type: "none",
-      #             isotherm_mult:0.6
-      #           },
-      #           {
-      #             time:4.0,
-      #             r_set:"ALL",
-      #             rock_density:1.0,
-      #             sorption_type: "linear",
-      #             isotherm_mult:0.6
-      #           }
-      #         ]
-    substances:
-      - A
-      - B
-    time:
-      end_time: 10
-      # init_dt:1.0
-    solver: !Petsc
-      a_tol: 1.0e-07
-      r_tol: 1.0e-07
-      # options:"-ksp_type gmres -ksp_monitor"
     #         TYPE:"RadioactiveDecay",
     #         decays:[
     #           {
@@ -140,6 +111,6 @@ problem: !Coupling_Sequential
       file: transport.pvd
       format: !vtk
         variant: ascii
-# problem
       times:
         - step: 1.0
+# problem

@@ -25,6 +25,13 @@ problem: !Coupling_Sequential
         a_tol: 1.0e-07
         r_tol: 1.0e-07
     n_schurs: 2
+    output_stream:
+      file: ./test15.pvd
+      format: !vtk
+        variant: ascii
+      times:
+        - step: 0.1
+      name: flow_output_stream
     output:
       fields:
         - pressure_p0
@@ -35,15 +42,11 @@ problem: !Coupling_Sequential
     time:
       end_time: 2.0
       max_dt: 0.1
-    output_stream: 
-      file: ./test15.pvd
-      format: !vtk
-        variant: ascii
-      name: flow_output_stream
-      times:
-        - step: 0.1
   solute_equation: !Coupling_OperatorSplitting
     transport: !Solute_AdvectionDiffusion_DG
+      solver: !Petsc
+        a_tol: 1.0e-07
+        r_tol: 1.0e-07
       input_fields:
         - region: domain
           init_conc: 0
@@ -55,16 +58,13 @@ problem: !Coupling_Sequential
           bc_type: dirichlet
           bc_conc: 0
           time: 0.1
-      solver: !Petsc
-        a_tol: 1.0e-07
-        r_tol: 1.0e-07
-    output_stream: 
+    output_stream:
       file: ./transport-implicit.pvd
       format: !vtk
         variant: ascii
-      name: transport_output_stream
       times:
         - step: 0.1
+      name: transport_output_stream
     substances:
       - conc
     time:

@@ -5,7 +5,6 @@ problem: !Coupling_Sequential
     mesh_file: ./input/rectangle_with_bc_0.2.msh
   # steady velocity field, with velocity v:0.1
   flow_equation: !Flow_Darcy_MH
-    output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-12
@@ -18,18 +17,25 @@ problem: !Coupling_Sequential
         bc_pressure: !FieldFormula
           value: 0.1*x
     n_schurs: 2
+    output_stream:
+      file: ./test14.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
       fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
     balance: {}
-    output_stream: 
-      file: ./test14.pvd
-      format: !vtk
-        variant: ascii
-      name: flow_output_stream
   solute_equation: !Coupling_OperatorSplitting
+    substances:
+      - A
+    time:
+      # test forcing smaller time step then output,
+      # but still larger then 0.01 necessary for capture input
+      max_dt: 0.05
+      end_time: 1.0
     transport: !Solute_Advection_FV
       input_fields:
         - region: bulk
@@ -43,19 +49,12 @@ problem: !Coupling_Sequential
         - region: .right
           time: 0.35
           bc_conc: 20
-    substances:
-      - A
-    time:
-      # test forcing smaller time step then output,
-      # but still larger then 0.01 necessary for capture input
-      max_dt: 0.05
-      end_time: 1.0
-    output_stream: 
+    output_stream:
       file: ./transport.pvd
       format: !vtk
         variant: ascii
-      name: transport_output_stream
       times:
         - step: 0.1
+      name: transport_output_stream
     balance:
       cumulative: true

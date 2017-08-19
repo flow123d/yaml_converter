@@ -8,7 +8,6 @@ problem: !Coupling_Sequential
   mesh:
     mesh_file: input/Y_branch.msh
   flow_equation: !Flow_Darcy_MH
-    output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-12
@@ -29,34 +28,34 @@ problem: !Coupling_Sequential
       - region: .right_branch
         bc_type: dirichlet
         bc_pressure: -5
+    output_stream:
+      file: test13.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
       fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
     balance: {}
-    output_stream: 
-      file: test13.pvd
-      format: !vtk
-        variant: ascii
-      name: flow_output_stream
   solute_equation: !Coupling_OperatorSplitting
     transport: !Solute_AdvectionDiffusion_DG
+      solver: !Petsc
+        a_tol: 1.0e-12
+        r_tol: 1.0e-12
       input_fields:
         - region: BULK
           init_conc: 0
         - region: .trunk
           bc_conc: 1
-      solver: !Petsc
-        a_tol: 1.0e-12
-        r_tol: 1.0e-12
-    output_stream: 
+    output_stream:
       file: transport_implicit.pvd
       format: !vtk
         variant: ascii
-      name: transport_output_stream
       times:
         - step: 5
+      name: transport_output_stream
     substances:
       - A
     time: *anchor3
