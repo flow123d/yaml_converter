@@ -11,6 +11,8 @@ Features:
 - can run in quiet mode or in debug mode, individual change sets may be noted as stable to do not report warnings as default
 - can be applied to the input format specification and check that it produce target format specification
 
+Compatible with ruamel.yaml 0.15.31
+
 '''
 import ruamel.yaml as ruml
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
@@ -120,6 +122,7 @@ def represent_commented_seq(cls, data):
 
 
 yml=ruml.YAML(typ='rt')
+yml.indent(mapping=2, sequence=4, offset=2)
 yml.representer.add_representer(CommentedScalar, CommentedScalar.to_yaml)
 yml.representer.add_representer(CommentedSeq, represent_commented_seq)
 yml.constructor.add_multi_constructor("!", construct_any_tag)
@@ -143,7 +146,7 @@ def is_map_node(node):
     return type(node) in [ dict, CommentedMap ]
 
 def is_scalar_node(node):
-    return type(node) in [ CommentedScalar, int, float, bool, None, str ]
+    return type(node) in [ CommentedScalar, ruml.scalarfloat.ScalarFloat, int, float, bool, None, str ]
 
 def is_map_key(key_str):
     return re.match('^[a-zA-Z][a-zA-Z_0-9]*$', key_str)
@@ -186,7 +189,8 @@ class Changes:
             if automatic_rule and version is not None:
                 assert re.match('[^.]*\.[^.]*\.[^.]*', version)
                 assert re.match('[^.]*\.[^.]*\.[^.]*', self.current_version)
-                if self.current_version == "0.0.0":
+                minor = self.current_version.split('.')[0:2]
+                if minor < ['2', '0']:
                     self.add_key_to_map("/", key="flow123d_version", value=version)
                 else:
                     self.change_value("/flow123d_version", old_val=self.current_version, new_val=version)
@@ -215,9 +219,13 @@ class Changes:
                     int : u'tag:yaml.org,2002:int',\
                     bool : u'tag:yaml.org,2002:bool',\
                     str : u'tag:yaml.org,2002:str',\
-                    None : u'tag:yaml.org,2002:null'}
-                assert type(node) in tags_for_types
-                tag = tags_for_types[type(node)]
+                    type(None) : u'tag:yaml.org,2002:null'}
+                tag = None
+                for x_type, x_tag in tags_for_types.items():
+                    if isinstance(node, x_type):
+                        tag = x_tag
+                #assert type(node) in tags_for_types
+                #tag = tags_for_types[type(node)]
                 return CommentedScalar(tag, node)
         else:
             assert False, "Unsupported node type: {}".format(type(node))
@@ -361,7 +369,7 @@ class Changes:
                 break
         return index
 
-    def __set_map(self, map, key, value, **kwargs):
+    def __set_map(self, map, key, value, hint_idx=None):
         '''
         Unified method how to insert new keys into maps. Particular method may be
         determined by parameter 'map_insert' of apply_changes.
@@ -376,10 +384,9 @@ class Changes:
             map[key] = value
 
         # insert new key
-        if 'hint_idx' in kwargs:
-            index = kwargs['hint_idx']
-        elif 'hint_key' in kwargs:
-            index = self.__idx_for_key(map, kwargs['hint_key'])
+        if hint_idx is not None:
+            assert type(hint_idx) == int, "hint: %s"%str(hint_idx)
+            index = hint_idx
         else:
             if self.map_insert == self.ALPHABETIC:
                 index=self.__idx_for_key(map, key)
@@ -566,19 +573,36 @@ class Changes:
                             self.__remove_value(nodes, addr)
                         else:
                             value = copy.deepcopy(nodes[-1])
-                            cases.append((value, n_alt, nodes, addr))
+                            cases.append((value, n_alt, nodes, []))
                     else:
+                        orig_idx_addr = self.idx_addr(addr)
                         value = self.__remove_value(nodes, addr)
-                        cases.append( (value, n_alt, nodes, addr) )
+                        cases.append( (value, n_alt, nodes, orig_idx_addr) )
 
         for case in cases:
             self.changed = True
             value_to_move, new, nodes, addr = case
-
             # create list of (key, tag); tag=None if no tag is specified
             new_split = new.strip('/').split('/')
             path_list = [ ( item.split('!') +  [None])[:2]   for item in  new_split ]
-            self.tree = self.__move_value( value_to_move, [self.tree], path_list)
+            self.tree = self.__move_value( value_to_move, [self.tree], path_list, addr)
+
+    def idx_addr(self, addr):
+        '''
+        Return list [ (key, idx), ..]
+        :param addr: Address
+        :return:
+        '''
+        iaddr=[]
+        node = self.tree
+        for key, tag in addr:
+            if is_map_node(node):
+                idx = self.__idx_for_key(node, key, equal=True)
+            else:
+                idx = key
+            iaddr.append( (key, idx) )
+            node = node[key]
+        return iaddr
 
     def __remove_value(self, nodes, addr_list):
         # remove value
@@ -614,7 +638,7 @@ class Changes:
             else:
                 node.tag.value = "!" + tag
 
-    def __move_value(self, value, nodes, path_list):
+    def __move_value(self, value, nodes, path_list, orig_addr):
         """
         Add moved value to the tree.
         
@@ -626,6 +650,12 @@ class Changes:
             return value
 
         key, tag = path_list.pop(0)
+        if orig_addr:
+            orig_key, orig_idx = orig_addr.pop(0)
+            if orig_key != key:
+                orig_addr = []
+        else:
+            orig_idx = None
 
         # debug: check that path is shorter
         if key in ['#', '0']:
@@ -637,7 +667,7 @@ class Changes:
                 i = 0
             if key == '#':
                 i = len(nodes[-1])
-            new_value = self.__move_value(value, None, path_list)
+            new_value = self.__move_value(value, None, path_list, orig_addr)
             self.__set_tag(new_value, tag)
             nodes[-1].insert(i, new_value)
 
@@ -650,12 +680,13 @@ class Changes:
                 nodes_plus = nodes + [ nodes[-1][key] ]
             else:
                 nodes_plus = None
-            new_value = self.__move_value(value, nodes_plus, path_list)
+            new_value = self.__move_value(value, nodes_plus, path_list, orig_addr)
             self.__set_tag(new_value, tag)
 
             # CMP AUX
             #nodes[-1][key] = new_value
-            self.__set_map(nodes[-1], key, new_value)
+
+            self.__set_map(nodes[-1], key, new_value, hint_idx=orig_idx)
         else:
             raise Exception("Wrong key: {}".format(key))
         return nodes[-1]

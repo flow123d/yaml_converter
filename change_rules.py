@@ -457,7 +457,7 @@ def make_changes():
     changes.new_version("2.0.0_rc")
 
     # CMP AUX
-    changes.add_key_to_map("/problem/flow_equation/", key="output_specific", value=CommentedMap())
+    #changes.add_key_to_map("/problem/flow_equation/", key="output_specific", value=CommentedMap())
 
     changes.move_value("/problem/flow_equation/output/raw_flow_output/",
                        "/problem/flow_equation/output_specific/raw_flow_output/")

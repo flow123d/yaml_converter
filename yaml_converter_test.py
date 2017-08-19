@@ -6,9 +6,9 @@ import sys
 
 def files_cmp(ref,out):
     with open(ref, "r") as f:
-        t=ruml.load(f, Loader=ruml.RoundTripLoader)
+        t=yml.load(f)
     with open(ref, "w") as f:
-        ruml.dump(t, f, Dumper=ruml.RoundTripDumper)
+        yml.dump(t, f)
     return filecmp.cmp(ref, out)
 
 def remove_prefix(str, prefix):
@@ -151,7 +151,7 @@ class TestActions(unittest.TestCase):
         changes.copy_value("{/problem}/secondary_equation_2/substances", "{}/secondary_equation_3/substances")
         self.perform(changes)
 
-
+    
 ####################################
 
     def  make_test_file(self, ext):
