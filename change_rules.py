@@ -28,12 +28,12 @@ def make_changes():
 
     # Change sign of boundary fluxes
     path_set = PathSet([
-        "/problem/secondary_equation/input_fields/*/bc_flux/",
-        "/problem/primary_equation/input_fields/*/bc_flux/",
-        "/problem/secondary_equation/input_fields/*/bc_flux/#/",
-        "/problem/primary_equation/input_fields/*/bc_flux/#/",
-        "/problem/secondary_equation/input_fields/*/bc_flux!FieldConstant/value/",
-        "/problem/primary_equation/input_fields/*/bc_flux!FieldConstant/value/"
+        "/problem/secondary_equation/input_fields/#/bc_flux/",
+        "/problem/primary_equation/input_fields/#/bc_flux/",
+        "/problem/secondary_equation/input_fields/#/bc_flux/#/",
+        "/problem/primary_equation/input_fields/#/bc_flux/#/",
+        "/problem/secondary_equation/input_fields/#/bc_flux!FieldConstant/value/",
+        "/problem/primary_equation/input_fields/#/bc_flux!FieldConstant/value/"
     ])
     changes.scale_scalar(path_set, multiplicator=-1)
 
@@ -55,26 +55,30 @@ def make_changes():
                           message_backward="Change sign of this field manually.")
 
     # Merge robin and neumann BC types into total_flux
-    path_set = PathSet(["/problem/secondary_equation/input_fields/*/bc_type/",
-                        "/problem/primary_equation/input_fields/*/bc_type/"])
 
-    changes.replace_value(path_set,
+    changes.replace_value("/problem/primary_equation/input_fields/*/bc_type/",
                           re_forward=("^(robin|neumann)$", "total_flux"),
                           re_backward=(None,
                                        "Select either 'robin' or 'neumann' according to the value of 'bc_flux', 'bc_pressure', 'bc_sigma'."))
 
+
+    changes.replace_value("/problem/secondary_equation/input_fields/*/bc_type/",
+                          re_forward=("^(robin|neumann)$", "diffusive_flux"),
+                          re_backward=(None,
+                                       "Select either 'robin' or 'neumann' according to the value of 'bc_flux', 'bc_pressure', 'bc_sigma'."))
+
     # Move FV transport
-    path_in = "/problem/secondary_equation_1!TransportOperatorSplitting/{(output_fields|input_fields)}/"
-    path_out = "/problem/secondary_equation_1!Coupling_OperatorSplitting/transport!Solute_Advection_FV/{}/"
+    path_in = "/problem/secondary_equation!TransportOperatorSplitting/{(output_fields|input_fields)}/"
+    path_out = "/problem/secondary_equation!Coupling_OperatorSplitting/transport!Solute_Advection_FV/{}/"
     changes.move_value(path_in, path_out)
 
     # Move DG transport
-    path_in = "/problem/secondary_equation_2!SoluteTransport_DG/{(input_fields|output_fields|solver|dg_order|dg_variant|solvent_density)}/"
-    path_out = "/problem/secondary_equation_2!Coupling_OperatorSplitting/transport!SoluteTransport_DG/{}/"
+    path_in = "/problem/secondary_equation!SoluteTransport_DG/{(input_fields|output_fields|solver|dg_order|dg_variant|solvent_density)}/"
+    path_out = "/problem/secondary_equation!Coupling_OperatorSplitting/transport!Solute_AdvectionDiffusion_DG/{}/"
     changes.move_value(path_in, path_out)
 
-    changes.move_value("/problem/secondary_equation_3!HeatTransfer_DG/",
-                       "/problem/secondary_equation_3!Heat_AdvectionDiffusion_DG/")
+    changes.move_value("/problem/secondary_equation!HeatTransfer_DG/",
+                       "/problem/secondary_equation!Heat_AdvectionDiffusion_DG/")
 
     # Remove r_set, use region instead
     # Reversed change is not unique
@@ -494,15 +498,15 @@ def make_changes():
 
     changes.move_value("{/problem/flow_equation}/output/output_stream/", "{}/output_stream/")
 
-    equations = "(flow_equation|" \
-                "solute_equation/transport|" \
+    equations = "(solute_equation/transport|" \
                 "solute_equation/reaction_term|" \
                 "solute_equation/reaction_term/reaction_mobile|" \
                 "solute_equation/reaction_term/reaction_immobile|" \
                 "heat_equation)"
-    changes.rename_key("/problem/" + equations + "/output/", old_key="output_fields", new_key="fields")
+    changes.rename_key("/problem/flow_equation/output/", old_key="output_fields", new_key="fields")
+    changes.move_value("{/problem/" + equations + "}/output_fields/", "{}/output/fields")
 
-    changes.move_value("{/problem/(flow_equation|solute_equation|heat_equation)/output_stream}/time_list/#/", "{}/times/#/")
+    changes.move_value("{/problem/(flow_equation|solute_equation|heat_equation)/output_stream}/time_list/", "{}/times/")
     changes.move_value("{/problem/(flow_equation|solute_equation|heat_equation)/output_stream}/time_step/",
                        "{}/times/0/step/")
 
@@ -767,8 +771,8 @@ def make_changes():
             }
         },
     '''
-    changes.change_value("/problem/**/input_fields/#/region", "BOUNDARY", ".BOUNDARY")
-    changes.change_value("/problem/**/input_fields/#/region", "IMPLICIT_BOUNDARY", ".IMPLICIT_BOUNDARY")
+    changes.change_value("/problem/**/input_fields/#/region/", "BOUNDARY", ".BOUNDARY")
+    changes.change_value("/problem/**/input_fields/#/region/", "IMPLICIT BOUNDARY", ".IMPLICIT_BOUNDARY")
 
     '''
         {

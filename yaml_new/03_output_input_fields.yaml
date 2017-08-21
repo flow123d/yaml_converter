@@ -26,6 +26,10 @@ problem: !Coupling_Sequential
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: x+y
+    output_stream:
+      file: flow.pvd
+      format: !vtk
+        variant: ascii
     output:
       fields:
         - pressure_p0
@@ -35,10 +39,6 @@ problem: !Coupling_Sequential
         - anisotropy
     balance: {}
   # primary equation
-    output_stream:
-      file: flow.pvd
-      format: !vtk
-        variant: ascii
   solute_equation: !Coupling_OperatorSplitting
     substances:
       - age

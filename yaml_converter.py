@@ -552,7 +552,11 @@ class Changes:
             old, new = self.__brace_substitution(old, new)
             old_alts = PathSet.expand_alternatives(old)
             new_alts = PathSet.expand_alternatives(new)
-            assert len(old_alts) == len(new_alts), "old: {} new: {}".format(old_alts, new_alts)
+            if copy_val:
+                assert len(old_alts) == 1
+                old_alts = old_alts * len(new_alts)
+            else:
+                assert len(old_alts) == len(new_alts), "old: {} new: {}".format(old_alts, new_alts)
             for o_alt, n_alt in zip(old_alts, new_alts ):
                 # TODO: check tag specifications
 
@@ -573,19 +577,19 @@ class Changes:
                             self.__remove_value(nodes, addr)
                         else:
                             value = copy.deepcopy(nodes[-1])
-                            cases.append((value, n_alt, nodes, []))
+                            cases.append((value, n_alt, nodes, [], None))
                     else:
                         orig_idx_addr = self.idx_addr(addr)
-                        value = self.__remove_value(nodes, addr)
-                        cases.append( (value, n_alt, nodes, orig_idx_addr) )
+                        value, comment = self.__remove_value(nodes, addr)
+                        cases.append( (value, n_alt, nodes, orig_idx_addr, comment) )
 
         for case in cases:
             self.changed = True
-            value_to_move, new, nodes, addr = case
+            value_to_move, new, nodes, addr, comment = case
             # create list of (key, tag); tag=None if no tag is specified
             new_split = new.strip('/').split('/')
             path_list = [ ( item.split('!') +  [None])[:2]   for item in  new_split ]
-            self.tree = self.__move_value( value_to_move, [self.tree], path_list, addr)
+            self.tree = self.__move_value( value_to_move, [self.tree], path_list, addr, comment)
 
     def idx_addr(self, addr):
         '''
@@ -605,8 +609,17 @@ class Changes:
         return iaddr
 
     def __remove_value(self, nodes, addr_list):
+        '''
+        Remove last of the 'nodes' list and possibly all empty parent nodes.
+        Preserve comments.
+        :param nodes: List of nodes from root down to the value to remove.
+        :param addr_list: Address of the value.
+        :return: REturn removed value
+        '''
         # remove value
-        assert len(nodes) > 1
+        if len(nodes) <= 1:
+            return None
+
         key = addr_list[-1][0]
 
         if is_map_node(nodes[-2]):
@@ -617,11 +630,15 @@ class Changes:
             value = nodes[-2].pop(key)
         else:
             assert False
+        try:
+            comment = nodes[-2].ca.items.pop(key)
+        except KeyError:
+            comment = None
 
         # remove empty maps and seqs
         if len(nodes[-2]) == 0 :
             self.__remove_value( nodes[:-1], addr_list[:-1])
-        return value
+        return (value, comment)
 
 
     def __set_tag(self, node, tag):
@@ -638,7 +655,7 @@ class Changes:
             else:
                 node.tag.value = "!" + tag
 
-    def __move_value(self, value, nodes, path_list, orig_addr):
+    def __move_value(self, value, nodes, path_list, orig_addr, comment):
         """
         Add moved value to the tree.
         
@@ -648,6 +665,11 @@ class Changes:
         """
         if not path_list:
             return value
+
+        if len(path_list) != 1:
+            comm = None
+        else:
+            comm = comment
 
         key, tag = path_list.pop(0)
         if orig_addr:
@@ -667,7 +689,7 @@ class Changes:
                 i = 0
             if key == '#':
                 i = len(nodes[-1])
-            new_value = self.__move_value(value, None, path_list, orig_addr)
+            new_value = self.__move_value(value, None, path_list, orig_addr, comment)
             self.__set_tag(new_value, tag)
             nodes[-1].insert(i, new_value)
 
@@ -680,7 +702,7 @@ class Changes:
                 nodes_plus = nodes + [ nodes[-1][key] ]
             else:
                 nodes_plus = None
-            new_value = self.__move_value(value, nodes_plus, path_list, orig_addr)
+            new_value = self.__move_value(value, nodes_plus, path_list, orig_addr, comment)
             self.__set_tag(new_value, tag)
 
             # CMP AUX
@@ -689,6 +711,13 @@ class Changes:
             self.__set_map(nodes[-1], key, new_value, hint_idx=orig_idx)
         else:
             raise Exception("Wrong key: {}".format(key))
+
+        if comm is not None: # just when setting final value
+            print("Dict:", nodes[-1])
+            print("Key:", key)
+            nodes[-1].ca.items[key] = comm
+
+
         return nodes[-1]
 
 
@@ -718,7 +747,14 @@ class Changes:
 
             orig_idx = self.__idx_for_key(curr, old_key, equal = True)
             value = curr.pop(old_key)
+            try:
+                comment = curr.ca.items.pop(old_key)
+            except KeyError:
+                comment = None
+            # value = self.__remove_value(nodes + [curr[old_key]], address.add(old_key, None))
             self.__set_map(curr, new_key, value, hint_idx=orig_idx)
+            if comment:
+                curr.ca.items[new_key] = comment
 
     def _rename_tag(self, paths, old_tag, new_tag, reversed):
         '''
@@ -747,7 +783,7 @@ class Changes:
             if curr.tag.value == "!" + old_tag:
                 curr.tag.value = "!" + new_tag
             else:
-                logging.warning("Tag '{}'!='{}' at path: {}".format(curr.tag.value, old_tag, address))
+                logging.warning("Current tag: '{}', expected: '{}' at path: {}".format(curr.tag.value[1:], old_tag, address))
 
 
 
@@ -827,15 +863,21 @@ class Changes:
                 logging.warning("Expecting scalar at path: {} get: {}".format(address, type(curr)))
                 continue
             assert type(curr) == CommentedScalar, "Wrong type: {} {}".format(type(curr))
-            if not type(curr.value) in [int, float]:
+            if not isinstance(curr.value, (int, float)):
                 continue
 
             self.changed = True
             is_int = curr.value is int
+            #x_value = curr.value
             if reversed:
                 curr.value /= multiplicator
             else:
                 curr.value *= multiplicator
+
+            # Workaround for BUG in library, do not keep attributes (_prec) during inplace ops.
+            if type(curr.value) == ruml.scalarfloat.ScalarFloat:
+                curr.value=float(curr.value)
+
             if is_int and float(curr.value).is_integer():
                 curr.value = int(curr.value)
 
@@ -908,7 +950,7 @@ class PathSet(object):
         """
         # pass through all combinations of alternatives (X|Y|Z)
         list_of_alts = []
-        for alt_group in re.finditer('\([^/|]*(\|[^/|]*)*\)', pattern):
+        for alt_group in re.finditer('\([^|]*(\|[^|]*)*\)', pattern):
             before_group = pattern[0:alt_group.start()]
             list_of_alts.append([before_group])
 

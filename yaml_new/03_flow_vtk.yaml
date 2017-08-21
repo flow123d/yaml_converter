@@ -17,7 +17,6 @@ problem: !Coupling_Sequential
       linear_solver: !Petsc
         a_tol: 1.0e-12
         r_tol: 1.0e-12
-    # primary equation
     input_fields:
       - region: 1d_domain
         conductivity: 1.0e-06
@@ -29,6 +28,10 @@ problem: !Coupling_Sequential
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: x+y
+    output_stream:
+      file: flow.pvd
+      format: !vtk
+        variant: ascii
     output:
       fields:
         - pressure_p0
@@ -36,10 +39,6 @@ problem: !Coupling_Sequential
         - velocity_p0
     balance: {}
   # primary equation
-    output_stream:
-      file: flow.pvd
-      format: !vtk
-        variant: ascii
   solute_equation: !Coupling_OperatorSplitting
     substances:
       - name: age

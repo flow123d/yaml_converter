@@ -18,7 +18,7 @@ def remove_prefix(str, prefix):
 
 
 class TestActions(unittest.TestCase):
-
+    '''
     def test_add_key(self):
         changes=Changes()
         changes.new_version("0.0.0")
@@ -115,7 +115,7 @@ class TestActions(unittest.TestCase):
         ]
         changes.scale_scalar(path_set, multiplicator=-1)
         self.perform(changes)
-
+    '''
 
     def test_move_value(self):
         changes=Changes()
@@ -151,7 +151,7 @@ class TestActions(unittest.TestCase):
         changes.copy_value("{/problem}/secondary_equation_2/substances", "{}/secondary_equation_3/substances")
         self.perform(changes)
 
-    
+
 ####################################
 
     def  make_test_file(self, ext):
@@ -195,7 +195,7 @@ class TestAllRules(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
     logging.debug("First debug message.")
 
     unittest.main()
