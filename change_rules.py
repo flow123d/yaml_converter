@@ -168,7 +168,7 @@ def make_changes():
 
     changes.new_version("2.0.0")
     
-    changes.rename_key("/problem/**/input_fields/#/*!(FieldElementwise|FieldInterpolatedP0)/", old_key="gmsh_file", new_key="mesh_data_file")
+    changes.rename_key("/problem/**/input_fields/#/*!(FieldElementwise|FieldInterpolatedP0|FieldInterpolatedP1)/", old_key="gmsh_file", new_key="mesh_data_file")
     
     changes.new_version("3.0.0_dev")
     return changes
