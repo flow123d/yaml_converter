@@ -1134,8 +1134,10 @@ if __name__ == "__main__":
             dirs = []
             for path in paths:
                 if os.path.isdir(path):
+                    print("dir append: %s"%path)
                     dirs.append(path)
                 elif os.path.isfile(path):
+                    print("file append: %s"%path)
                     if not path.endswith(".new.yaml"):
                         files.append(path)
                 else:
@@ -1161,6 +1163,8 @@ if __name__ == "__main__":
     action_files={}
     for fname in files:
         base = os.path.splitext(fname)[0]
+        if not fname.endwith(".yaml"):
+            print("Warning: '{}' is not \"*.yaml\", skipping.".format(fname))
         with open(fname, "r") as f:
             tree = yml.load(f)
             actions = changes.apply_changes(tree, args.to_version, reversed=args.reverse, map_insert=Changes.BEGINNING)
