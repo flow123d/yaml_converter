@@ -1,7 +1,7 @@
 import unittest
 import filecmp
 from shutil import copyfile
-from yaml_converter import *
+from YAMLConverter import *
 import sys
 
 def files_cmp(ref,out):
@@ -18,7 +18,6 @@ def remove_prefix(str, prefix):
 
 
 class TestActions(unittest.TestCase):
-    '''
     def test_add_key(self):
         changes=Changes()
         changes.new_version("0.0.0")
@@ -115,7 +114,6 @@ class TestActions(unittest.TestCase):
         ]
         changes.scale_scalar(path_set, multiplicator=-1)
         self.perform(changes)
-    '''
 
     def test_move_value(self):
         changes=Changes()
