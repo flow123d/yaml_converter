@@ -196,14 +196,4 @@ class TestActions:
         self.perform(changes)
 
 
-####################################
-
-
-
-class TestAllRules:
-    '''
-    Integration test to test correct conversion of all yaml files
-    from dir: 'yaml_old' to dir 'yaml_new' and back to 'yaml_rev'
-    '''
-
 
