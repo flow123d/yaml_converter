@@ -1,5 +1,16 @@
 problem: !SequentialCoupling
   mesh:
+    sets:
+      - name: D
+        region_ids: [5, 6]
+      - name: E
+        union: [F, G]
+      - name: F
+        union: [D, E]
+      - name: G
+        intersection: [F, E]
+      - name: H
+        difference: [G, E]
     regions:
       - name: A
         id: 1
@@ -7,18 +18,7 @@ problem: !SequentialCoupling
         label: X
       - name: C
         id: 3
-        element_list: [ 2, 3]
-    sets:
-      - name: D
-        region_ids: [ 5, 6]
-      - name: E
-        region_labels: [ F, G]
-      - name: F
-        union: [ D, E]
-      - name: G
-        intersection: [ F, E]
-      - name: H
-        difference: [ G, E]
+        element_list: [2, 3]
   secondary_equation_1: !TransportOperatorSplitting
     input_fields:
       - region: domain
@@ -27,7 +27,7 @@ problem: !SequentialCoupling
         bc_type: dirichlet
         bc_conc: 10
         time: 0.0
-    output_stream: 
+    output_stream:
       file: ./transport.pvd
       format: !vtk
         variant: ascii
@@ -41,9 +41,11 @@ problem: !SequentialCoupling
       end_time: 2.0
     balance:
       cumulative: true
-      
+
   secondary_equation_2: !SoluteTransport_DG
-    # comment intput fields
+    solver: !Petsc
+      a_tol: 1.0e-12
+      r_tol: 1.0e-12
     input_fields:
       - r_set: BOUNDARY
         bc_conc: 0
@@ -56,7 +58,7 @@ problem: !SequentialCoupling
         dg_penalty: 100
       - rid: 30
         init_conc: 1
-    output_stream: 
+    output_stream:
       file: ./transport-implicit.pvd
       format: !vtk
         variant: ascii
@@ -64,14 +66,11 @@ problem: !SequentialCoupling
       name: transport_output_stream
     substances:
       - A
-    solver: !Petsc
-      a_tol: 1.0e-12
-      r_tol: 1.0e-12
     time:
       end_time: 0.01
       max_dt: 0.001
     balance:
-      cumulative: true   
+      cumulative: true
   # comment heat    
   secondary_equation_3: !HeatTransfer_DG
     input_fields:
@@ -83,4 +82,3 @@ problem: !SequentialCoupling
     solver: !Petsc
       a_tol: 1.0e-12
       r_tol: 1.0e-12
-      

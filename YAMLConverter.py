@@ -674,10 +674,8 @@ class Changes:
         else:
             orig_idx = None
 
-        # debug: check that path is shorter
         if key in ['#', '0']:
             if nodes is None:
-                # debug correctly created Seq
                 nodes = [CommentedSeq()]
             assert is_list_node(nodes[-1])
             if key == '0':

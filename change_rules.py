@@ -14,11 +14,7 @@ Features:
 '''
 from yaml_converter import PathSet, Changes, CommentedMap, CommentedSeq, CommentedScalar
 
-def make_changes():
-    changes = Changes()
-
-    # Add header key 'flow123d_version'
-    changes.new_version("1.8.2")
+def changes_to_200rc(changes):
 
     # Change degree keys in PadeApproximant
     path_set = PathSet(["/problem/secondary_equation/**/ode_solver!PadeApproximant/"])
@@ -124,8 +120,8 @@ def make_changes():
     changes.move_value("/problem/secondary_equation!Heat_AdvectionDiffusion_DG",
                        "/problem/heat_equation!Heat_AdvectionDiffusion_DG")
 
-    changes.new_version("2.0.0_rc")
 
+def changes_to_200(changes):
     # CMP AUX
     #changes.add_key_to_map("/problem/flow_equation/", key="output_specific", value=CommentedMap())
 
@@ -166,6 +162,17 @@ def make_changes():
     changes.change_value("/problem/**/input_fields/#/region/", "BOUNDARY", ".BOUNDARY")
     changes.change_value("/problem/**/input_fields/#/region/", "IMPLICIT BOUNDARY", ".IMPLICIT_BOUNDARY")
 
+
+def make_changes():
+    changes = Changes()
+
+    # Add header key 'flow123d_version'
+    changes.new_version("1.8.2")
+
+    changes_to_200rc(changes)
+    changes.new_version("2.0.0_rc")
+
+    changes_to_200(changes)
     changes.new_version("2.0.0")
     
     changes.rename_key("/problem/**/input_fields/#/*!(FieldElementwise|FieldInterpolatedP0|FieldInterpolatedP1)/", old_key="gmsh_file", new_key="mesh_data_file")

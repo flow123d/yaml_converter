@@ -51,7 +51,6 @@ problem: !SequentialCoupling
 
   secondary_equation_2: !Coupling_OperatorSplitting
     transport: !SoluteTransport_DG
-      # comment intput fields
       input_fields:
         - r_set: BOUNDARY
           bc_conc: 0

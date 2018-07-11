@@ -22,6 +22,22 @@ import fnmatch
 import logging
 
 
+def orig_split(f):
+    ff = f
+    prefix = file_base + "."
+    if not f.startswith(prefix):
+        return None
+    f = f[len(prefix) - 1:]  # keep leading dot
+    if not f.endswith(orig_sufix):
+        return None
+    f = f[:-len(orig_sufix)]  # remove including dot
+    if len(f) == 0:
+        return (0, ff)
+    f = f[1:]  # remove leading dot
+    try:
+        return (int(f), ff)
+    except:
+        return None
 
 
 if __name__ == "__main__":
@@ -117,22 +133,7 @@ if __name__ == "__main__":
         if orig_sufix and fname.endswith(orig_sufix):
             continue
 
-        def orig_split(f):
-            ff = f
-            prefix = file_base + "."
-            if not f.startswith(prefix):
-                return  None
-            f = f[len(prefix)-1 :]         # keep leading dot
-            if not f.endswith(orig_sufix):
-                return None
-            f = f[:-len(orig_sufix)]     # remove including dot
-            if len(f) == 0:
-                return (0, ff)
-            f = f[1:]                   # remove leading dot
-            try:
-                return (int(f), ff)
-            except:
-                return None
+
 
         # perform undo
         if args.undo_level != 0:
