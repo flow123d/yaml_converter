@@ -1,0 +1,9 @@
+# before A
+A:  # endline A
+  # before B
+  B: 0  # endline B
+  # before C
+  C: 1  # endline C
+  # after C
+
+# after A
