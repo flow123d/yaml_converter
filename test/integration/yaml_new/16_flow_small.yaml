@@ -1,8 +1,7 @@
-flow123d_version: 2.0.0
+flow123d_version: 3.0.0_dev
 problem: !Coupling_Sequential
-  description: Zero flow + transport with source. Substance A - increase of concentration,
-    B - decrease of concentration, C - rapid increase of concentration with high sigma,
-    such that it determines CFL condition (t equals 1/(10/0.9)).
+  description: Zero flow + transport with source. Substance A - increase of concentration, B - decrease of concentration,
+    C - rapid increase of concentration with high sigma, such that it determines CFL condition (t equals 1/(10/0.9)).
   mesh:
     mesh_file: ./input/test16_small.msh
   flow_equation: !Flow_Darcy_MH

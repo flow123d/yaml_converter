@@ -1,10 +1,9 @@
-flow123d_version: 2.0.0
+flow123d_version: 3.0.0_dev
 problem: !Coupling_Sequential
   time: &anchor3
     end_time: 100.0
     init_dt: 5.0
-  description: Test13 - mixing of substances on edges and quantitative test on trivial
-    transport problem.
+  description: Test13 - mixing of substances on edges and quantitative test on trivial transport problem.
   mesh:
     mesh_file: input/Y_branch.msh
   flow_equation: !Flow_Darcy_MH
