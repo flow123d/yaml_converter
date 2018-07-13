@@ -122,13 +122,19 @@ def represent_commented_seq(cls, data):
     return cls.represent_sequence(tag, data)
 
 
-yml = ruml.YAML(typ='rt')
-
-yml.indent(mapping=2, sequence=4, offset=2)
-yml.width=120
-yml.representer.add_representer(CommentedScalar, CommentedScalar.to_yaml)
-yml.representer.add_representer(CommentedSeq, represent_commented_seq)
-yml.constructor.add_multi_constructor("!", construct_any_tag)
+def get_yaml_serializer():
+    """
+    Get YAML serialization/deserialization object with proper
+    configuration for conversion.
+    :return: Confugured instance of ruamel.yaml.YAML.
+    """
+    yml = ruml.YAML(typ='rt')
+    yml.indent(mapping=2, sequence=4, offset=2)
+    yml.width=120
+    yml.representer.add_representer(CommentedScalar, CommentedScalar.to_yaml)
+    yml.representer.add_representer(CommentedSeq, represent_commented_seq)
+    yml.constructor.add_multi_constructor("!", construct_any_tag)
+    return yml
 
 '''
 Helpers:
@@ -264,10 +270,10 @@ class Changes:
         Apply initailized list of actions to the data tree 'root'.
         :param tree: Input data tree.
         :param out_version: Target version tag, we apply all changes for versions less then this one.
-        and greater or equal to the version of the file.
-        :param warn: Produce wranings for nondeterministic conversions.
-        :param reversed: Produce backward conversion from the target version to the initial version.
-        :param map_insert: Method where to insert new values into maps.
+        and greater or equal to the version of the file. If this is smaller then actual version of the file
+        the reversed conversion is performed.
+        :param warn: Produce warnings for nondeterministic conversions.
+        :param map_insert: Method where to insert new values into maps. ALPHABETIC or BEGINNING.
         :return: List of used actions
         """
         self.close_changes()
@@ -283,8 +289,9 @@ class Changes:
         in_version = tree.get('flow123d_version', None)
         if in_version is not None:
             in_version = in_version.value
-        if reversed:
-            in_version, out_version = out_version, in_version
+
+        #if reversed:
+        #    in_version, out_version = out_version, in_version
         # in_version is always the smaller one
 
         if in_version is None:
@@ -293,9 +300,9 @@ class Changes:
             out_version = self._changes[-1][0]
 
         if in_version > out_version:
-            raise Exception("Wrong versions order, in_version: %s, out_version: %s." % (in_version, out_version))
-        if reversed:
             in_version, out_version = out_version, in_version
+            reversed=True
+
 
         # reverse
         if not reversed:
@@ -706,8 +713,8 @@ class Changes:
             raise Exception("Wrong key: {}".format(key))
 
         if comm is not None:  # just when setting final value
-            print("Dict:", nodes[-1])
-            print("Key:", key)
+            #print("Dict:", nodes[-1])
+            #print("Key:", key)
             nodes[-1].ca.items[key] = comm
 
         return nodes[-1]
@@ -955,9 +962,14 @@ class PathSet(object):
 
     def __init__(self, path_patterns):
         """
-        Initialize the set by all plases of the given root structure using deep first search.
-        :param path: Path to root (e.g. "/key1/0/key2/1"
-        :param root: Root map or array.
+        Construct a path search object. This can be combined with a YAML tree to
+        iterate through al matching paths using the 'iterate' generator.
+        :param path_patterns: Pattern format:
+            ** - match any sub path
+            * - match any map key
+            # - match any array item
+            key!tag - match a key only with given tag
+            (x|y) - match either x or y, any number of alternatives, can be used for both keys and tags.
         """
         if type(path_patterns) == PathSet:
             self.path_patterns = path_patterns.path_patterns
