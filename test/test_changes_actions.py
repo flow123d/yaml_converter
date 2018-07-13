@@ -26,7 +26,7 @@ class TestActions:
         self.test_name = method.__name__
 
     def make_test_file(self, ext):
-        fname = os.path.join(source_dir, "test_rules", self.test_name_base + ext)
+        fname = os.path.join(source_dir, "test_actions", self.test_name_base + ext)
         if not os.path.isfile(fname) and hasattr(self, "in_file"):
             copyfile(self.in_file, fname)
         return fname

@@ -1,18 +1,16 @@
 import pytest
 import filecmp
+import yaml_converter
 from shutil import copyfile
 import os
-from subprocess import call
+#from subprocess import call
 
 source_dir = os.path.dirname(os.path.abspath(__file__))
 
+def test_yaml_converter(yaml_old, yaml_new, yaml_rev):
+    yaml_converter.convert()
 
-def files_cmp(ref,out):
-    with open(ref, "r") as f:
-        t=yml.load(f)
-    with open(ref, "w") as f:
-        yml.dump(t, f)
-    return filecmp.cmp(ref, out)
+
 
 def remove_prefix(str, prefix):
     if str.startswith(prefix):
@@ -20,7 +18,7 @@ def remove_prefix(str, prefix):
     return str
 
 def make_test_file(self, ext):
-    fname = os.path.join(source_dir, "test_rules", self.test_name_base + ext)
+    fname = os.path.join(source_dir, "test_actions", self.test_name_base + ext)
     if not os.path.isfile(fname) and hasattr(self, "in_file"):
         copyfile(self.in_file, fname)
     return fname
@@ -53,9 +51,9 @@ def perform(self, changes):
 
 
 def test_convert_real_files():
-    old_dir = os.path.join(source_dir, "integration", "yaml_old")
-    new_dir = os.path.join(source_dir, "integration", "yaml_new")
-    rev_dir = os.path.join(source_dir, "integration", "yaml_rev")
+    old_dir = os.path.join(source_dir, "flow123d_input", "yaml_old")
+    new_dir = os.path.join(source_dir, "flow123d_input", "yaml_new")
+    rev_dir = os.path.join(source_dir, "flow123d_input", "yaml_rev")
     main_script = os.path.join(source_dir,  "..", "yaml_converter.py")
     for old_file in os.listdir(old_dir):
         basename = os.path.basename(old_file)
@@ -69,4 +67,6 @@ class TestFiles:
     # Common methods
     def setup_method(self, method):
         self.test_name = method.__name__
+
+
 
