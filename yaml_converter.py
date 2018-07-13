@@ -33,11 +33,11 @@ def get_parsed_args(args):
         description="Bidirectional conversion of YAML file(s) using given set of change rules.\n"
                     "Original file is stored as FILE.origNN.yaml. Undo option '-u' can be used to\n"
                     "restore the original file before new conversion takes the place.")
-    #parser.add_argument("-f", "--from-version", default="0.0.0", help="Version of the input file. ")
+    parser.add_argument("-o", "--output", help="Filename to use for the converted file.")
     parser.add_argument("-d", "--dry-run", action='store_true',
                         help="Do not write the file after conversion.")
     parser.add_argument("-t", "--to-version", default="ZZ.ZZ.ZZ",
-                       help="Version of the output. Defult is the newest version.")
+                       help="Version of the output. Defult is the newest version. Version '0' can be used to revert to the very first version.")
     # parser.add_argument("-r", "--reverse", action='store_true',
     #                     help="Perform reversed conversion. Input file is in 'to-version'.")
     parser.add_argument("-u", "--undo",
@@ -57,7 +57,7 @@ def get_parsed_args(args):
     print(args)
     return parser.parse_args(args)
 
-# TODO: review and fix undo and orig saving
+# TODO:
 # - finish flow123d_input test
 # - add option to match also value in PathSet, e.g. to identify just some values of an array
 #   Syntax /a/#/key:(value1| value2| ..)
@@ -140,6 +140,8 @@ def main(cmd_args):
             fname_out = None
         else:
             fname_out = fname_in = save_and_undo(fname, args.undo_level)
+            if args.output is not None:
+                fname_out = args.output
 
         if fname_in is None:
             return None

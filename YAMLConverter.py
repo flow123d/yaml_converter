@@ -264,8 +264,7 @@ class Changes:
         b0, b1 = b
         return not (b1 < a0 or a1 < b0)
 
-    def apply_changes(self, tree, out_version, \
-                      reversed=False, warn=True, map_insert=None):
+    def apply_changes(self, tree, out_version, in_version=None, warn=True, map_insert=None):
         """
         Apply initailized list of actions to the data tree 'root'.
         :param tree: Input data tree.
@@ -286,13 +285,16 @@ class Changes:
 
         assert is_map_node(tree)
 
-        in_version = tree.get('flow123d_version', None)
-        if in_version is not None:
-            in_version = in_version.value
+        if in_version is None:
+            in_version = tree.get('flow123d_version', None)
+            if in_version is not None:
+                in_version = in_version.value
 
         #if reversed:
         #    in_version, out_version = out_version, in_version
         # in_version is always the smaller one
+        if out_version == '0':
+            out_version = self._changes[0][0]
 
         if in_version is None:
             in_version = self._changes[0][0]
@@ -300,15 +302,12 @@ class Changes:
             out_version = self._changes[-1][0]
 
         if in_version > out_version:
-            in_version, out_version = out_version, in_version
             reversed=True
-
-
-        # reverse
-        if not reversed:
-            changes = self._changes
-        else:
             changes = self._reversed
+        else:
+            reversed = False
+            changes = self._changes
+
 
         active = 0
         actions = []

@@ -4,18 +4,13 @@ import glob
 from shutil import copyfile
 import YAMLConverter
 import filecmp
+
 source_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-def yaml_files_cmp(ref,out):
-    yml = YAMLConverter.get_yaml_serializer()
-    with open(ref, "r") as f:
-        t=yml.load(f)
-    with open(ref, "w") as f:
-        yml.dump(t, f)
-    return filecmp.cmp(ref, out)
 
-def test_script_undo():
+
+def test_script_undo(yaml_files_cmp):
     fname = os.path.join(source_dir, "test_script_data", "add_key.in.yaml")
     os.path.join(source_dir, "test_script_data", "add_key.in.yaml")
 
@@ -47,6 +42,6 @@ def test_script_undo():
 
     for f in glob.glob(os.path.join(source_dir, "test_script_data", "add_key.in.orig*")):
         os.remove(f)
-    os.remove(os.path.join(source_dir, "test_script_data", "add_key.in.ref1"))
-    os.remove(os.path.join(source_dir, "test_script_data", "add_key.in.ref2"))
+    os.remove(os.path.join(source_dir, "test_script_data", "add_key.in.yaml.ref1"))
+    os.remove(os.path.join(source_dir, "test_script_data", "add_key.in.yaml.ref2"))
 
