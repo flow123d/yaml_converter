@@ -36,8 +36,8 @@ problem: !Coupling_Sequential
     solver: !Petsc
       a_tol: 1.0e-07
       r_tol: 1.0e-07
-      # options:"-ksp_type gmres -ksp_monitor"
     transport: !Solute_Advection_FV
+      # options:"-ksp_type gmres -ksp_monitor"
       input_fields:
         - region: BULK
           init_conc:
