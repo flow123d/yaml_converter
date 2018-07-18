@@ -24,16 +24,19 @@ def clean_dir(fname):
     for f in glob.glob(os.path.splitext(fname)[0] + '.orig??.yaml'):
         os.remove(f)
 
-def test_yaml_converter(flow_yaml_files, yaml_files_cmp):
+def test_yaml_forward_converter(flow_yaml_files, yaml_files_cmp):
     yaml_old, yaml_out, yaml_new, yaml_rev, yaml_rrf = flow_yaml_files
     yaml_converter.main(['-o', yaml_out, yaml_old])
     assert yaml_files_cmp(yaml_out, yaml_new)
+    clean_dir(yaml_out)
+
+
+
+def test_yaml_reversed_converter(flow_yaml_files, yaml_files_cmp):
+    yaml_old, yaml_out, yaml_new, yaml_rev, yaml_rrf = flow_yaml_files
     yaml_converter.main(['-t', '0' ,'-o', yaml_rev, yaml_new])
     assert yaml_files_cmp(yaml_rev, yaml_rrf)
-
-    clean_dir(yaml_out)
     #clean_dir(yaml_rev)
-
 
 
 # def remove_prefix(str, prefix):

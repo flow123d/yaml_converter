@@ -24,7 +24,8 @@ import glob
 from shutil import copyfile
 
 
-
+class ExcFailedConversion(Exception):
+    pass
 
 
 def get_parsed_args(args):
@@ -112,7 +113,7 @@ def convert(changes, to_version, fname_in, fname_out):
     try:
         actions = changes.apply_changes(tree, to_version, map_insert=Changes.BEGINNING)
     except:
-        raise Exception("Failed conversion of file: {}".format(fname_in))
+        raise ExcFailedConversion("Failed conversion of file: {}".format(fname_in))
 
     if fname_out is not None:
         with open(fname_out, "w") as f:
@@ -123,18 +124,21 @@ def convert(changes, to_version, fname_in, fname_out):
 
 def main(cmd_args):
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    log = logging.getLogger('Converter')
 
     from change_rules import make_changes
     changes = make_changes()
 
     args = get_parsed_args(cmd_args)
 
-    files = glob.glob(args.in_file) #expand_wild_pattern(args.in_file)
+
+    files = glob.glob(args.in_file)
     if not files:
         raise Exception("No file to convert for pattern: %s"%args.in_file)
 
     action_files={}
     for fname in files:
+        print("File: ", fname)
         if args.dry_run:
             fname_in = fname
             fname_out = None
@@ -144,9 +148,14 @@ def main(cmd_args):
                 fname_out = args.output
 
         if fname_in is None:
-            return None
+            continue
 
-        actions = convert(changes, args.to_version, fname_in, fname_out)
+        print("Convert: ", fname)
+        try:
+            actions = convert(changes, args.to_version, fname_in, fname_out)
+        except ExcFailedConversion:
+            log.exception("Failed conversion.")
+
         for act in actions:
             action_files.setdefault(act, set())
             action_files[act].add(fname)
