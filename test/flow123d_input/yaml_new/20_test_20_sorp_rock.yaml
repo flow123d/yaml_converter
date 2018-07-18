@@ -11,7 +11,7 @@ output_streams:
 problem: !Coupling_Sequential
   description: TestXXX-pork
   mesh:
-    mesh_file: ${INPUT}/test_20.msh
+    mesh_file: $INPUT_DIR$/test_20.msh
   flow_equation: !Flow_Darcy_MH
     nonlinear_solver:
       linear_solver: !Petsc

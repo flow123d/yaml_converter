@@ -12,7 +12,9 @@ Features:
 - can be applied to the input format specification and check that it produce target format specification
 
 '''
-from yaml_converter import PathSet, Changes, CommentedMap, CommentedSeq, CommentedScalar
+from path_set import PathSet
+from YAMLConverter import Changes
+from yaml_parser_extra import CommentedMap, CommentedScalar
 
 def changes_to_200rc(changes):
 

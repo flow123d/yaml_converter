@@ -14,7 +14,11 @@ Features:
 Compatible with ruamel.yaml 0.15.31
 
 '''
-from YAMLConverter import *
+from yaml_parser_extra import get_yaml_serializer
+from YAMLConverter import Changes
+#from YAMLConverter import
+
+import re
 import os
 import sys
 import argparse
@@ -155,6 +159,7 @@ def main(cmd_args):
             actions = convert(changes, args.to_version, fname_in, fname_out)
         except ExcFailedConversion:
             log.exception("Failed conversion.")
+            actions = []
 
         for act in actions:
             action_files.setdefault(act, set())

@@ -1,6 +1,6 @@
 import pytest
 import os
-import YAMLConverter
+from yaml_parser_extra import get_yaml_serializer
 import filecmp
 import re
 
@@ -34,14 +34,14 @@ def yaml_serializer():
     """
     Test YAML serialization fixture.
     """
-    return YAMLConverter.get_yaml_serializer()
+    return get_yaml_serializer()
 
 @pytest.fixture
 def yaml_files_cmp():
     return _yaml_files_cmp
 
 def _yaml_files_cmp(ref,out):
-    yml = YAMLConverter.get_yaml_serializer()
+    yml = get_yaml_serializer()
     with open(ref, "r") as f:
         t=yml.load(f)
     with open(ref, "w") as f:

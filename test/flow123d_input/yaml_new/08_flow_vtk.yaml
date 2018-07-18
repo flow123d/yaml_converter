@@ -2,7 +2,7 @@ flow123d_version: 3.1.0
 problem: !Coupling_Sequential
   description: Test8 - Steady flow with sources
   mesh:
-    mesh_file: ${INPUT}/test08.msh
+    mesh_file: $INPUT_DIR$/test08.msh
   flow_equation: !Flow_Darcy_MH
     nonlinear_solver:
       linear_solver: !Petsc
