@@ -2,7 +2,7 @@ flow123d_version: 3.1.0
 problem: !Coupling_Sequential
   description: Test2 - Transport 1D-2D (convection, dual porosity, sorption)
   mesh:
-    mesh_file: ./input/compatible.msh
+    mesh_file: $INPUT_DIR$/compatible.msh
     regions:
       - !Union
         name: .sides
@@ -51,6 +51,12 @@ problem: !Coupling_Sequential
         - region: subset
           init_conc: 0
           porosity: 0.25
+      - r_set: ALL
+        init_conc: !FieldElementwise
+          gmsh_file: $INPUT_DIR$/test18_init.msh
+          field_name: concentration
+        diff_m: 0.1
+        dg_penalty: 100
       output:
         fields:
           - conc

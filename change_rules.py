@@ -162,6 +162,16 @@ def changes_to_200(changes):
     changes.change_value("/problem/**/input_fields/#/region/", "BOUNDARY", ".BOUNDARY")
     changes.change_value("/problem/**/input_fields/#/region/", "IMPLICIT BOUNDARY", ".IMPLICIT_BOUNDARY")
 
+def changes_to_300(changes):
+    changes.rename_key("/problem/**/input_fields/#/*!(FieldElementwise|FieldInterpolatedP0|FieldInterpolatedP1)/", old_key="gmsh_file", new_key="mesh_data_file")
+
+
+def changes_to_310(changes):
+    changes.replace_value("/problem/**/mesh_data_file|mesh_file|script_file/",
+                          re_forward=("\$\{INPUT\}", "$INPUT_DIR$"),
+                          re_backward=("$INPUT_DIR$","\$\{INPUT\}"))
+    changes.rename_key("/problem/mesh/", old_key="global_observe_search_radius", new_key="global_snap_radius")
+
 
 def make_changes():
     changes = Changes()
@@ -174,6 +184,15 @@ def make_changes():
 
     changes_to_200(changes)
     changes.new_version("2.0.0")
+    changes.new_version("2.1.0")
+    changes.new_version("2.2.0")
+
+    changes_to_300(changes)
+    changes.new_version("3.0.0")
+    changes_to_310(changes)
+    changes.new_version("3.1.0")
+    return changes
+
     
     changes.rename_key("/problem/**/input_fields/#/*!(FieldElementwise|FieldInterpolatedP0|FieldInterpolatedP1)/", old_key="gmsh_file", new_key="mesh_data_file")
     
