@@ -405,91 +405,6 @@ class Changes:
                 assert False
         map.insert(index, key, value)
 
-    '''
-    ACTIONS, __get_attr__ provides related method without underscore to add the action into changes.
-    In general actions do not raise erros but report warnings and just skip the conversion for actual path.
-    '''
-
-    def _add_key_to_map(self, paths, key, value, reversed):
-        '''
-        ACTION.
-        For every path P in path set 'paths' add key 'key' to the map at path P.
-        This path must be a map. Assign the given 'value' to the key. The key is inserted
-        before first key larger in alphabetical order.
-        The 'value' can be only scalar.
-        REVERSE.
-        For every path P in the path set 'path' remove key 'key_name' from the map.
-        '''
-        for nodes, address in PathSet(paths).iterate(self.tree):
-            curr = nodes[-1]
-            if not is_map_node(curr):
-                logging.warning("Expecting map at path: {}".format(address.s()))
-                continue
-            if reversed:
-                if key in curr:
-                    del curr[key]
-                    self.changed = True
-            else:
-                if key in curr:
-                    logging.warning("Overwriting key: %s == %s" % (address.s() + '/' + key, curr[key]))
-                # Must make deep copy otherwise we share value accross all changed trees
-                # which may cause spurious values in empy maps going form other files.
-                new_val = copy.deepcopy(value)
-                self.__set_map(curr, key, new_val)
-                self.changed = True
-
-    def _set_tag_from_key(self, paths, key, tag, reversed):
-        '''
-        ACTION.
-        For ever path P in 'paths' which has to be a map. Set 'tag' if the map contains 'key'.
-        Reversed: just remove the tag. Ignore other tags.
-        :param paths:
-        :param key:
-        :param tag:
-        :param reversed:
-        :return:
-        '''
-
-        for nodes, address in PathSet(paths).iterate(self.tree):
-
-            assert is_map_node(nodes[-1]), "Node: {}".format(nodes[-1])
-            if not key in nodes[-1]:
-                continue
-
-            self.changed = True
-            if reversed:
-                curr_tag = nodes[-1].tag.value
-                if curr_tag and curr_tag != '!' + tag:
-                    raise Exception("Deleting wrong tag: {}, expected: {}".format(curr_tag, tag))
-                self.__set_tag(nodes[-1], "")  # remove tag
-            else:
-                self.__set_tag(nodes[-1], tag)
-
-    def _manual_change(self, paths, message_forward, message_backward, reversed):
-        '''
-        ACTION.
-        For every path P in the path set 'path' which has to end by key. Rename the key (if invalidate='key')
-        or the tag (if invalidate='tag') by postfix '_NEED_EDIT'. And appended comment with the message_forward.
-        REVERSE.
-        For every path P in the path set 'path', make the same, but use message_backward for the comment.
-        '''
-        for nodes, address in PathSet(paths).iterate(self.tree):
-            self.changed = True
-            if reversed:
-                self.__apply_manual_conv(nodes, address, message_backward)
-            else:
-                self.__apply_manual_conv(nodes, address, message_forward)
-
-    """
-    def remove_key(path_set, key_name, key_value):
-        '''
-        ACTION.
-        For every path P in path list 'path_set' remove key 'key_name'. This is an inverse action to add_key_to_map.
-        REVERSE.
-        For every path P in the path set 'path' add key 'key_name' to the map and set it to the given default value
-        `key_value`.
-        '''
-    """
 
     def __brace_substitution(self, old, new):
         """
@@ -517,83 +432,7 @@ class Changes:
         assert not re.findall("[{}]", new)
         return old, new
 
-    def _copy_value(self, new_paths, old_paths, reversed):
-        self._move_value(new_paths, old_paths, reversed, copy_val=True)
-
-    def _move_value(self, new_paths, old_paths, reversed, copy_val=False):
-        """
-        ACTION.
-        Move a values from 'new_paths' to 'old_paths'.
-        We can not use standard patterns as this makes move a non-invertible action.
-        We first expand both lists into list of pairs of simple paths with tag specifications and
-        than apply move for each pair of these paths.
-
-
-        Path_in must be pattern for absolute path, '*' and '**' are not allowed.
-
-        1. In path_out, substitute every {} with corresponding {*} in path_in.
-        2. Expand both old_paths and new_paths for alternatives
-           resulting lists should be of the same size. Otherwise we report error since this is indpendent of the data.
-        3. For every corresponding pair of 'old' and 'new' paths:
-           - tag spec must be in both paths for corresponding keys
-           - find 'old' in the tree (no tag spec '/x/' means any tag, empty tag /x!/, means no tag)
-            # - is allowed, means any item of a list
-           - create path in the tree according to 'new',
-           - set tags if specified, check tag spec in 'old'
-           - # means append to the list
-           - move value from old path to new path
-           - remove any empty map or list in 'old' path
-        """
-        new_paths = enlist(new_paths)
-        old_paths = enlist(old_paths)
-        rev = reversed
-        del reversed
-        cases = []
-        assert len(new_paths) == len(old_paths)
-        for old, new in zip(new_paths, old_paths):
-            old, new = self.__brace_substitution(old, new)
-            old_alts = PathSet.expand_alternatives(old)
-            new_alts = PathSet.expand_alternatives(new)
-            if copy_val:
-                assert len(old_alts) == 1
-                old_alts = old_alts * len(new_alts)
-            else:
-                assert len(old_alts) == len(new_alts), "old: {} new: {}".format(old_alts, new_alts)
-            for o_alt, n_alt in zip(old_alts, new_alts):
-                # TODO: check tag specifications
-
-                if rev:
-                    o_alt, n_alt = n_alt, o_alt
-
-                path_match = [match for match in PathSet(o_alt).iterate(self.tree)]
-                # if path_match:
-                #    if len(path_match) > 1:
-                #        raise Exception("More then single match for the move path: {}".format(old))
-
-                # Reverse list matches to move list elemenets from end.
-
-                for match in path_match[::-1]:
-                    nodes, addr = match
-                    if copy_val:
-                        if rev:
-                            self.__remove_value(nodes, addr)
-                        else:
-                            value = copy.deepcopy(nodes[-1])
-                            cases.append((value, n_alt, nodes, [], None))
-                    else:
-                        orig_idx_addr = self.idx_addr(addr)
-                        value, comment = self.__remove_value(nodes, addr)
-                        cases.append((value, n_alt, nodes, orig_idx_addr, comment))
-
-        for case in cases:
-            self.changed = True
-            value_to_move, new, nodes, addr, comment = case
-            # create list of (key, tag); tag=None if no tag is specified
-            new_split = new.strip('/').split('/')
-            path_list = [(item.split('!') + [None])[:2] for item in new_split]
-            self.tree = self.__move_value(value_to_move, [self.tree], path_list, addr, comment)
-
-    def idx_addr(self, addr):
+    def __idx_addr(self, addr):
         '''
         Return list [ (key, idx), ..]
         :param addr: Address
@@ -718,6 +557,209 @@ class Changes:
 
         return nodes[-1]
 
+
+    def __apply_manual_conv(self, nodes, address, message):
+        if len(nodes) < 2 or not is_map_node(nodes[-2]):
+            return
+
+        key = address[-1][0]
+        map_of_key = nodes[-2]
+        assert is_map_node(map_of_key)
+
+        curr = nodes[-1]
+
+        if is_scalar_node(curr):
+            comment = "# :{}  # {}".format(curr.value, message)
+            map_of_key.yaml_add_eol_comment(comment, key)
+            curr.value = None
+            self.changed = True
+        else:
+            # nodes[-1].yaml_set_start_comment(message)
+            ckey = 'COMMENTED_' + key
+
+            map_of_key[ckey] = nodes[-1]
+            map_of_key.yaml_set_comment_before_after_key(ckey, before=message, indent=len(nodes))
+            del map_of_key[key]
+
+
+    def __commented_value(self, x):
+        if is_map_node(x):
+            return dict(x)
+        elif is_list_node(x):
+            return list(x)
+        elif type(x) == CommentedScalar:
+            return x.value
+        else:
+            return x
+
+    def __commented_cmp(self, a, b):
+        return self.__commented_value(a) == self.__commented_value(b)
+
+
+    '''
+    ACTIONS, __get_attr__ provides related method without underscore to add the action into changes.
+    In general actions do not raise erros but report warnings and just skip the conversion for actual path.
+    '''
+
+    def _add_key_to_map(self, paths, key, value, reversed):
+        '''
+        ACTION.
+        For every path P in path set 'paths' add key 'key' to the map at path P.
+        This path must be a map. Assign the given 'value' to the key. The key is inserted
+        before first key larger in alphabetical order.
+        The 'value' can be only scalar.
+        REVERSE.
+        For every path P in the path set 'path' remove key 'key_name' from the map.
+        '''
+        for nodes, address in PathSet(paths).iterate(self.tree):
+            curr = nodes[-1]
+            if not is_map_node(curr):
+                logging.warning("Expecting map at path: {}".format(address.s()))
+                continue
+            if reversed:
+                if key in curr:
+                    del curr[key]
+                    self.changed = True
+            else:
+                if key in curr:
+                    logging.warning("Overwriting key: %s == %s" % (address.s() + '/' + key, curr[key]))
+                # Must make deep copy otherwise we share value accross all changed trees
+                # which may cause spurious values in empy maps going form other files.
+                new_val = copy.deepcopy(value)
+                self.__set_map(curr, key, new_val)
+                self.changed = True
+
+    def _set_tag_from_key(self, paths, key, tag, reversed):
+        '''
+        ACTION.
+        For ever path P in 'paths' which has to be a map. Set 'tag' if the map contains 'key'.
+        Reversed: just remove the tag. Ignore other tags.
+        :param paths:
+        :param key:
+        :param tag:
+        :param reversed:
+        :return:
+        '''
+
+        for nodes, address in PathSet(paths).iterate(self.tree):
+
+            assert is_map_node(nodes[-1]), "Node: {}".format(nodes[-1])
+            if not key in nodes[-1]:
+                continue
+
+            self.changed = True
+            if reversed:
+                curr_tag = nodes[-1].tag.value
+                if curr_tag and curr_tag != '!' + tag:
+                    raise Exception("Deleting wrong tag: {}, expected: {}".format(curr_tag, tag))
+                self.__set_tag(nodes[-1], "")  # remove tag
+            else:
+                self.__set_tag(nodes[-1], tag)
+
+    def _manual_change(self, paths, message_forward, message_backward, reversed):
+        '''
+        ACTION.
+        For every path P in the path set 'path' which has to end by key. Rename the key (if invalidate='key')
+        or the tag (if invalidate='tag') by postfix '_NEED_EDIT'. And appended comment with the message_forward.
+        REVERSE.
+        For every path P in the path set 'path', make the same, but use message_backward for the comment.
+        '''
+        for nodes, address in PathSet(paths).iterate(self.tree):
+            self.changed = True
+            if reversed:
+                self.__apply_manual_conv(nodes, address, message_backward)
+            else:
+                self.__apply_manual_conv(nodes, address, message_forward)
+
+    """
+    def remove_key(path_set, key_name, key_value):
+        '''
+        ACTION.
+        For every path P in path list 'path_set' remove key 'key_name'. This is an inverse action to add_key_to_map.
+        REVERSE.
+        For every path P in the path set 'path' add key 'key_name' to the map and set it to the given default value
+        `key_value`.
+        '''
+    """
+
+
+    def _copy_value(self, new_paths, old_paths, reversed):
+        self._move_value(new_paths, old_paths, reversed, copy_val=True)
+
+    def _move_value(self, new_paths, old_paths, reversed, copy_val=False):
+        """
+        ACTION.
+        Move a values from 'new_paths' to 'old_paths'.
+        We can not use standard patterns as this makes move a non-invertible action.
+        We first expand both lists into list of pairs of simple paths with tag specifications and
+        than apply move for each pair of these paths.
+
+
+        Path_in must be pattern for absolute path, '*' and '**' are not allowed.
+
+        1. In path_out, substitute every {} with corresponding {*} in path_in.
+        2. Expand both old_paths and new_paths for alternatives
+           resulting lists should be of the same size. Otherwise we report error since this is indpendent of the data.
+        3. For every corresponding pair of 'old' and 'new' paths:
+           - tag spec must be in both paths for corresponding keys
+           - find 'old' in the tree (no tag spec '/x/' means any tag, empty tag /x!/, means no tag)
+            # - is allowed, means any item of a list
+           - create path in the tree according to 'new',
+           - set tags if specified, check tag spec in 'old'
+           - # means append to the list
+           - move value from old path to new path
+           - remove any empty map or list in 'old' path
+        """
+        new_paths = enlist(new_paths)
+        old_paths = enlist(old_paths)
+        rev = reversed
+        del reversed
+        cases = []
+        assert len(new_paths) == len(old_paths)
+        for old, new in zip(new_paths, old_paths):
+            old, new = self.__brace_substitution(old, new)
+            old_alts = PathSet.expand_alternatives(old)
+            new_alts = PathSet.expand_alternatives(new)
+            if copy_val:
+                assert len(old_alts) == 1
+                old_alts = old_alts * len(new_alts)
+            else:
+                assert len(old_alts) == len(new_alts), "old: {} new: {}".format(old_alts, new_alts)
+            for o_alt, n_alt in zip(old_alts, new_alts):
+                # TODO: check tag specifications
+
+                if rev:
+                    o_alt, n_alt = n_alt, o_alt
+
+                path_match = [match for match in PathSet(o_alt).iterate(self.tree)]
+                # if path_match:
+                #    if len(path_match) > 1:
+                #        raise Exception("More then single match for the move path: {}".format(old))
+
+                # Reverse list matches to move list elemenets from end.
+
+                for match in path_match[::-1]:
+                    nodes, addr = match
+                    if copy_val:
+                        if rev:
+                            self.__remove_value(nodes, addr)
+                        else:
+                            value = copy.deepcopy(nodes[-1])
+                            cases.append((value, n_alt, nodes, [], None))
+                    else:
+                        orig_idx_addr = self.__idx_addr(addr)
+                        value, comment = self.__remove_value(nodes, addr)
+                        cases.append((value, n_alt, nodes, orig_idx_addr, comment))
+
+        for case in cases:
+            self.changed = True
+            value_to_move, new, nodes, addr, comment = case
+            # create list of (key, tag); tag=None if no tag is specified
+            new_split = new.strip('/').split('/')
+            path_list = [(item.split('!') + [None])[:2] for item in new_split]
+            self.tree = self.__move_value(value_to_move, [self.tree], path_list, addr, comment)
+
+
     def _rename_key(self, paths, old_key, new_key, reversed):
         '''
         ACTION.
@@ -818,18 +860,6 @@ class Changes:
             else:
                 curr.value = re.sub(regexp[0], regexp[1], curr.value)
 
-    def commented_value(self, x):
-        if is_map_node(x):
-            return dict(x)
-        elif is_list_node(x):
-            return list(x)
-        elif type(x) == CommentedScalar:
-            return x.value
-        else:
-            return x
-
-    def commented_cmp(self, a, b):
-        return self.commented_value(a) == self.commented_value(b)
 
     def _change_value(self, paths, old_val, new_val, reversed):
         """
@@ -841,7 +871,7 @@ class Changes:
             old_val, new_val = new_val, old_val
 
         for nodes, address in PathSet(paths).iterate(self.tree):
-            if self.commented_cmp(nodes[-1], old_val):
+            if self.__commented_cmp(nodes[-1], old_val):
                 key = address[-1][0]
                 nodes[-2][key] = copy.deepcopy(new_val)
 
@@ -877,28 +907,6 @@ class Changes:
             if is_int and float(curr.value).is_integer():
                 curr.value = int(curr.value)
 
-    def __apply_manual_conv(self, nodes, address, message):
-        if len(nodes) < 2 or not is_map_node(nodes[-2]):
-            return
-
-        key = address[-1][0]
-        map_of_key = nodes[-2]
-        assert is_map_node(map_of_key)
-
-        curr = nodes[-1]
-
-        if is_scalar_node(curr):
-            comment = "# :{}  # {}".format(curr.value, message)
-            map_of_key.yaml_add_eol_comment(comment, key)
-            curr.value = None
-            self.changed = True
-        else:
-            # nodes[-1].yaml_set_start_comment(message)
-            ckey = 'COMMENTED_' + key
-
-            map_of_key[ckey] = nodes[-1]
-            map_of_key.yaml_set_comment_before_after_key(ckey, before=message, indent=len(nodes))
-            del map_of_key[key]
 
 
 class Address(list):
@@ -1102,5 +1110,12 @@ class PathSet(object):
             if target_path is None:
                 return None
         return target_path
+
+
+
+
+
+
+
 
 

@@ -167,9 +167,9 @@ def changes_to_300(changes):
 
 
 def changes_to_310(changes):
-    changes.replace_value("/problem/**/mesh_data_file|mesh_file|script_file/",
+    changes.replace_value("/problem/**/(mesh_data_file|mesh_file|script_file)/",
                           re_forward=("\$\{INPUT\}", "$INPUT_DIR$"),
-                          re_backward=("$INPUT_DIR$","\$\{INPUT\}"))
+                          re_backward=("\$INPUT_DIR\$","\$\{INPUT\}"))
     changes.rename_key("/problem/mesh/", old_key="global_observe_search_radius", new_key="global_snap_radius")
 
 
