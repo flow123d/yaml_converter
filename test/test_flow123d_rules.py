@@ -10,19 +10,20 @@ import glob
 source_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-def yaml_files_cmp(ref,out):
-    yml = YAMLConverter.get_yaml_serializer()
-    with open(ref, "r") as f:
-        t=yml.load(f)
-    with open(ref, "w") as f:
-        yml.dump(t, f)
-    return filecmp.cmp(ref, out)
+# def yaml_files_cmp(ref,out):
+#     yml = YAMLConverter.get_yaml_serializer()
+#     with open(ref, "r") as f:
+#         t=yml.load(f)
+#     with open(ref, "w") as f:
+#         yml.dump(t, f)
+#     return filecmp.cmp(ref, out)
 
 
 def clean_dir(fname):
     os.remove(fname)
     for f in glob.glob(os.path.splitext(fname)[0] + '.orig??.yaml'):
         os.remove(f)
+
 
 def test_yaml_forward_converter(flow_yaml_files, yaml_files_cmp):
     yaml_old, yaml_out, yaml_new, yaml_rev, yaml_rrf = flow_yaml_files
@@ -31,7 +32,7 @@ def test_yaml_forward_converter(flow_yaml_files, yaml_files_cmp):
     clean_dir(yaml_out)
 
 
-
+@pytest.mark.skip
 def test_yaml_reversed_converter(flow_yaml_files, yaml_files_cmp):
     yaml_old, yaml_out, yaml_new, yaml_rev, yaml_rrf = flow_yaml_files
     yaml_converter.main(['-t', '0' ,'-o', yaml_rev, yaml_new])
