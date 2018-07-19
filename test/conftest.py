@@ -16,7 +16,7 @@ def pytest_generate_tests(metafunc):
         for basename in os.listdir(old_dir):
             if not re.match('\d\d_[^.]*\.yaml', basename):
                 continue
-            #if basename != '02_input_placeholder.yaml':
+            #if basename != '50_exact_2d_nc_p1.yaml':
             #    continue
             old_file = os.path.join(old_dir, basename)
             new_ref_file = os.path.join(new_dir, basename)

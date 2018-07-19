@@ -144,3 +144,66 @@ def get_yaml_serializer():
     yml.constructor.add_multi_constructor("!", construct_any_tag)
     return yml
 
+
+def get_node_tag(node):
+    if hasattr(node, "tag"):
+        tag = node.tag.value
+        if tag and len(tag) > 1 and tag[0] == '!' and tag[1] != '!':
+            return tag
+    return ""
+
+
+
+class Address(list):
+    '''
+    Class to represent an address in the yaml file including the tag info.
+    '''
+
+    def add(self, key, tag):
+        '''
+        Return new address object for given key and tag.
+        :param key:
+        :param tag:
+        :return:
+        '''
+        x = Address(self)
+        x.append((key, tag))
+        return x
+
+    def __str__(self):
+        '''
+        Full string representation.
+        :return:
+        '''
+        return "/" + "/".join([str(key) + "!" + str(tag) for key, tag in self])
+
+    def s(self):
+        '''
+        Representation without tag info.
+        :return:
+        '''
+        return "/" + "/".join([str(key) for key, tag in self])
+
+
+def iterate_nodes(nodes, address):
+    """
+    Iterate over subtree using DFS
+    :param nodes: list of nodes from root of the whole tree to root of the iterated subtree.
+    :param address: Address instance (address of the node) of the root of subtree
+
+    :yield: (nodelist, address) ... for all nodes of the subtree
+    """
+    current = nodes[-1]
+    yield (nodes, address)
+
+    if is_list_node(current):
+        iterable = enumerate(current)
+    elif is_map_node(current):
+        iterable = current.items()
+    else:
+        return
+
+    for key, child in iterable:
+        tag = get_node_tag(child)[1:]
+        yield from iterate_nodes(nodes + [child], address.add(key, tag))
+

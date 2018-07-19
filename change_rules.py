@@ -14,7 +14,7 @@ Features:
 '''
 from path_set import PathSet
 from YAMLConverter import Changes
-from yaml_parser_extra import CommentedMap, CommentedScalar
+from yaml_parser_extra import CommentedMap, CommentedSeq, CommentedScalar
 
 def changes_to_200rc(changes):
 
@@ -174,6 +174,16 @@ def changes_to_310(changes):
                           re_backward=("\$INPUT_DIR\$","\$\{INPUT\}"))
     changes.rename_key("/problem/mesh/", old_key="global_observe_search_radius", new_key="global_snap_radius")
 
+    #changes.add_key_to_map("problem/flow_equation/output_specific/",
+    #                        key="fields",
+    #                        value=CommentedSeq())
+    changes.move_value("/problem/flow_equation/output/fields/#/::velocity_diff",
+                       "/problem/flow_equation/output_specific/fields/#/")
+    changes.move_value("/problem/flow_equation/output/fields/#/::pressure_diff",
+                       "/problem/flow_equation/output_specific/fields/#/")
+    changes.move_value("/problem/flow_equation/output/fields/#/::div_diff",
+                       "/problem/flow_equation/output_specific/fields/#/")
+
 
 def make_changes():
     changes = Changes()
@@ -191,12 +201,7 @@ def make_changes():
 
     changes_to_300(changes)
     changes.new_version("3.0.0")
+    changes.new_version("3.0.0_dev")
     changes_to_310(changes)
     changes.new_version("3.1.0")
-    return changes
-
-    
-    changes.rename_key("/problem/**/input_fields/#/*!(FieldElementwise|FieldInterpolatedP0|FieldInterpolatedP1)/", old_key="gmsh_file", new_key="mesh_data_file")
-    
-    changes.new_version("3.0.0_dev")
     return changes

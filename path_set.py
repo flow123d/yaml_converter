@@ -3,41 +3,12 @@
 import itertools
 import re
 import logging
-from yaml_parser_extra import is_list_node, is_map_node
+from yaml_parser_extra import iterate_nodes, Address, is_scalar_node
 
 
 
 
 
-class Address(list):
-    '''
-    Class to represent an address in the yaml file including the tag info.
-    '''
-
-    def add(self, key, tag):
-        '''
-        Return new address object for given key and tag.
-        :param key:
-        :param tag:
-        :return:
-        '''
-        x = Address(self)
-        x.append((key, tag))
-        return x
-
-    def __str__(self):
-        '''
-        Full string representation.
-        :return:
-        '''
-        return "/" + "/".join([str(key) + "!" + str(tag) for key, tag in self])
-
-    def s(self):
-        '''
-        Representation without tag info.
-        :return:
-        '''
-        return "/" + "/".join([str(key) for key, tag in self])
 
 
 class PathSet(object):
@@ -92,24 +63,41 @@ class PathSet(object):
 
         for p in self.path_patterns:
             p = p.strip('/')
-            p = p + '/'
             for pp in self.expand_alternatives(p):
-                # '**' = any number of levels, any key or index per level
-                pp = re.sub('\*\*', '[a-zA-Z0-9_]@(/[a-zA-Z0-9_]@)@', pp)
-                # '*' = single level, any key or index per level
-                pp = re.sub('\*', '[a-zA-Z0-9_]@', pp)
-                # '#' = single level, only indices
-                pp = re.sub('\#', '[0-9]@', pp)
-                # '/' = allow tag info just after key names
-                pp = re.sub('/', '(![a-zA-Z0-9_]@)?/', pp)
-                # return back all starts
-                pp = re.sub('@', '*', pp)
-                pp = pp.strip('/')
-                pp = "^" + pp + "$"
-                self.patterns.append(pp)
+                # split to path_pattern, tail_pattern and value_pattern
+                pp = pp + ":::"
+                l = pp.split(':', maxsplit=3)
+                if len(l) != 4:
+                    assert True
+                base_p, tail_p, value_p, _ = l
+                tail_p = self.make_path_re(base_p + "/" + tail_p)
+                base_p = self.make_path_re(base_p)
+
+
+                if value_p:
+                    value_p = re.compile(value_p)
+                else:
+                    value_p = None
+                self.patterns.append( (base_p, tail_p, value_p) )
         logging.debug("Patterns: " + str(self.patterns))
-        # self.options=kwds
-        self.matches = []
+
+    def make_path_re(self, path_pattern):
+        pp = path_pattern + '/'
+        # '**' = any number of levels, any key or index per level
+        pp = re.sub('\*\*', '[a-zA-Z0-9_]@(/[a-zA-Z0-9_]@)@', pp)
+        # '*' = single level, any key or index per level
+        pp = re.sub('\*', '[a-zA-Z0-9_]@', pp)
+        # '#' = single level, only indices
+        pp = re.sub('\#', '[0-9]@', pp)
+        # merge multiple '/'
+        pp = re.sub('/+', '/', pp)
+        # '/' = allow tag info just after key names
+        pp = re.sub('/', '(![a-zA-Z0-9_]@)?/', pp)
+        # return back all starts
+        pp = re.sub('@', '*', pp)
+        pp = pp.strip('/')
+        pp = "^" + pp + "$"
+        return re.compile(pp)
 
     def iterate(self, tree):
         """
@@ -121,95 +109,91 @@ class PathSet(object):
         address - address of current node including the tag specification if the tag is set
         """
         logging.debug("Patterns: {}".format(self.patterns))
+        for nodes, address in iterate_nodes([tree], Address()):
+            if self.match(nodes, address):
+                logging.debug("Match path")
+                yield (nodes, address)
 
-        yield from self.dfs_iterate([tree], Address())
-
-    @staticmethod
-    def get_node_tag(node):
-        if hasattr(node, "tag"):
-            tag = node.tag.value
-            if tag and len(tag) > 1 and tag[0] == '!' and tag[1] != '!':
-                return tag
-        return ""
 
     # @staticmethod
     # def node_has_tag(node, tag):
     #    return tag is None or PathSet.get_node_tag(node) == tag
 
-    def dfs_iterate(self, nodes, address):
-        current = nodes[-1]
-        logging.debug("DFS at: " + str(address))
-        if self.match(nodes, str(address)):
-            # terminate recursion in every node
-            self.matches += [current]
-            yield (nodes, address)
-
-        if is_list_node(current):
-            iterable = enumerate(current)
-        elif is_map_node(current):
-            iterable = current.items()
-        else:
-            return
-
-        for key, child in iterable:
-            tag = self.get_node_tag(child)[1:]
-            yield from self.dfs_iterate(nodes + [child], address.add(key, tag))
 
     def match(self, data_path, path):
-        path = path.strip('/')
-        for pattern in self.patterns:
-            if re.match(pattern, path) != None:
-                logging.debug("Match path")
-                # for key, param in self.options.items():
-                #     logging.debug("Match path")
-                #     if key == "have_tag":
-                #         tag_path = list(param.split('/'))
-                #         target = self.traverse_tree(data_path, tag_path[0:-1])
-                #         target = target[-1]
-                #         if not target or not hasattr(target, "tag"):
-                #             return False
-                #         if target.tag.value != "!" + tag_path[-1]:
-                #             return False
-                # logging.debug("Full Match")
-                return True
+        path = str(path).strip('/')
+        for pattern, tail_pattern, value_pattern in self.patterns:
+            # Check match in base path.
+            if pattern.match(path) is None:
+                continue
+
+            # check existence of tail_path
+            if tail_pattern is not None:
+                for _, address in iterate_nodes(data_path, path):
+                    if tail_pattern.match(address):
+                        break
+                else:
+                    # No match of tail
+                    continue
+
+            # check match of value
+            if value_pattern is not None:
+                if not self.match_value(value_pattern, data_path[-1]):
+                    continue
+
+            return True
         return False
 
-    @staticmethod
-    def traverse_node(nodes, key, create=False):
-        curr = nodes[-1]
-        if key == "..":
-            nodes.pop()
-        elif key.isdigit():
-            assert (is_list_node(curr))
-            idx = int(key)
-            if idx >= len(curr):
-                return None
-            nodes.append(curr[idx])
-        else:
-            assert (is_map_node(curr))
-            if not key in curr:
-                if create:
-                    curr[key] = None
-                else:
-                    return None
-            nodes.append(curr[key])
-        return nodes
 
-    def traverse_tree(self, data_path, rel_path):
-        """
-        Move accross data tree starting at address given by 'data_path', according
-        to rel_path.
-        :param self:
-        :param data_path: List of data nodes starting from root down to current node.
-        :param rel_path: Relative address of the target node, e.g. "../key_name/1"
-        :return: Data path of target node. None in case of incomaptible address.
-        """
-        target_path = data_path.copy()
-        for key in rel_path:
-            target_path = self.traverse_node(target_path, key)
-            if target_path is None:
-                return None
-        return target_path
+    def match_value(self,  value_pattern, node):
+        if not is_scalar_node(node):
+            return False
+        if type(node.value) != str:
+            return False
+        if value_pattern.match(node.value):
+            return True
+        else:
+            return False
+
+    ###################
+    # Helper methods to traverse the YAML tree using a relative path.
+
+    # @staticmethod
+    # def traverse_node(nodes, key, create=False):
+    #     curr = nodes[-1]
+    #     if key == "..":
+    #         nodes.pop()
+    #     elif key.isdigit():
+    #         assert (is_list_node(curr))
+    #         idx = int(key)
+    #         if idx >= len(curr):
+    #             return None
+    #         nodes.append(curr[idx])
+    #     else:
+    #         assert (is_map_node(curr))
+    #         if not key in curr:
+    #             if create:
+    #                 curr[key] = None
+    #             else:
+    #                 return None
+    #         nodes.append(curr[key])
+    #     return nodes
+    #
+    # def traverse_tree(self, data_path, rel_path):
+    #     """
+    #     Move accross data tree starting at address given by 'data_path', according
+    #     to rel_path.
+    #     :param self:
+    #     :param data_path: List of data nodes starting from root down to current node.
+    #     :param rel_path: Relative address of the target node, e.g. "../key_name/1"
+    #     :return: Data path of target node. None in case of incomaptible address.
+    #     """
+    #     target_path = data_path.copy()
+    #     for key in rel_path:
+    #         target_path = self.traverse_node(target_path, key)
+    #         if target_path is None:
+    #             return None
+    #     return target_path
 
 
 

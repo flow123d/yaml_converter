@@ -23,6 +23,10 @@ problem: !Coupling_Sequential
         bc_type: dirichlet
         bc_pressure: 10
     output_specific:
+      fields:
+        - velocity_diff
+        - pressure_diff
+        - div_diff
       compute_errors: true
     output_stream:
       file: ./test1.pvd
@@ -35,7 +39,4 @@ problem: !Coupling_Sequential
         - pressure_p0
         - pressure_p1
         - velocity_p0
-        - velocity_diff
-        - pressure_diff
-        - div_diff
     balance: {}
