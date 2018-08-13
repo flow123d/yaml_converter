@@ -69,6 +69,15 @@ def test_add_key(changes):
     changes.add_key_to_map("/", key="flow123d_version", value="2.0.0")
 
 
+def test_versions_property():
+    changes = Changes()
+    changes.new_version("0.0.0")
+    changes.add_key_to_map("/", key="flow123d_version", value="2.0.0")
+    changes.new_version("0.1.0")
+
+    print(changes.versions)
+    assert changes.versions == ["0.0.0", "0.1.0"]
+
 
 def test_manual_change(changes):
     changes.new_version("0.0.0")

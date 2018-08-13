@@ -116,6 +116,12 @@ class Changes:
         self._reversed.reverse()
         self._reversed = [(v1, v0, list(reversed(changes))) for v0, v1, changes in self._reversed]
 
+    @property
+    def versions(self):
+        versions = [ self._changes[0][0] ]
+        versions += [ v1 for v0, v1, _ in self._changes ]
+        return versions
+
     def intersecting_intervals(self, a, b):
         '''
         Returns true if interval a intersect interval b.

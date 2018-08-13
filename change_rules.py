@@ -184,12 +184,16 @@ def changes_to_310(changes):
     changes.move_value("/problem/flow_equation/output/fields/#/::div_diff",
                        "/problem/flow_equation/output_specific/fields/#/")
 
+    # FieldElementwise to FieldFE
+    changes.rename_tag("/problem/**/input_fields/#/*!FieldElementwise", old_tag="FieldElementwise", new_tag="FieldFE")
+
 
 def make_changes():
     changes = Changes()
 
     # Add header key 'flow123d_version'
     changes.new_version("1.8.2")
+    changes.new_version("1.8.3")
 
     changes_to_200rc(changes)
     changes.new_version("2.0.0_rc")

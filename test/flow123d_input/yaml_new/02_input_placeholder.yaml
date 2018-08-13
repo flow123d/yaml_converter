@@ -52,7 +52,7 @@ problem: !Coupling_Sequential
           init_conc: 0
           porosity: 0.25
         - region: ALL
-          init_conc: !FieldElementwise
+          init_conc: !FieldFE
             mesh_data_file: $INPUT_DIR$/test18_init.msh
             field_name: concentration
           diff_m: 0.1
