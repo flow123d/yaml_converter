@@ -1,0 +1,112 @@
+problem: !SequentialCoupling
+  description: Test3 - Transport implicit 1D-2D, (convection, dispersion)
+  mesh:
+    mesh_file: ./input/mesh_with_boundary.msh
+    sets:
+      - name: 1d_domain
+        union:
+          - 1d_upper
+          - 1d_lower
+          - 1d_left_branch
+  primary_equation: !Unsteady_MH
+    output_specific:
+    input_fields:
+      - r_set: 2d
+        conductivity: 1.0e-07
+      - r_set: BOUNDARY
+        bc_type:  # :dirichlet  # Select either 'robin' or 'neumann' according to the value of 'bc_flux', 'bc_pressure', 'bc_sigma'.
+        bc_pressure: !FieldFormula
+          value: x+y
+    output:
+      output_stream:
+        file: flow.pvd
+        format: !vtk
+          variant: ascii
+        name: flow_output_stream
+      output_fields:
+        - pressure_p0
+        - pressure_p1
+        - velocity_p0
+    balance: true
+    solver: !Petsc
+      a_tol: 1.0e-12
+      r_tol: 1.0e-12
+  secondary_equation: !SoluteTransport_DG
+    substances:
+      - name: age
+        molar_mass: 0.018
+    # water age
+      - name: U235
+        molar_mass: 0.235
+    # uranium 235
+    solver: !Petsc
+      a_tol: 1.0e-12
+      r_tol: 1.0e-12
+    input_fields:
+      - r_set: ALL
+        init_conc: 0
+        porosity: !FieldFormula
+          value: 0.25+t*5e-7
+        sources_density:
+          - 0.25
+          - 0
+        # source is in the whole volume (l+s) -> times porosity
+      - r_set: BOUNDARY
+        bc_conc:
+          - 0.0
+          - 1.0
+    reaction_term: !DualPorosity
+      input_fields:
+        - r_set: ALL
+          diffusion_rate_immobile:
+            - 0.01
+            - 0.01
+          porosity_immobile: 0.25
+          init_conc_immobile:
+            - 0.0
+            - 0.0
+      reaction_mobile: !SorptionMobile
+        solvent_density: 1000.0
+        # water
+        substances:
+          - age
+          - U235
+        solubility:
+          - 1.0
+          - 1.0
+        input_fields: &anchor1
+          - r_set: ALL
+            rock_density: 2800.0
+          # granit
+            sorption_type:
+              - none
+              - freundlich
+            isotherm_mult:
+              - 0
+              - 0.68
+            isotherm_other:
+              - 0
+              - 1.0
+        output_fields: []
+      reaction_immobile: !SorptionImmobile
+        solvent_density: 1000.0
+        # water
+        substances:
+          - age
+          - U235
+        solubility:
+          - 1.0
+          - 1.0
+        input_fields: *anchor1
+        output_fields: []
+      output_fields: []
+    output_stream:
+      file: transport.pvd
+      format: !vtk
+        variant: ascii
+      name: transport_output_stream
+      time_step: 100000.0
+    time:
+      end_time: 1000000.0
+    balance:
+      cumulative: true

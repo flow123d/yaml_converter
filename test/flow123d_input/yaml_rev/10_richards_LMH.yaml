@@ -1,0 +1,50 @@
+# Test problem based on a simulation of an experiment performed at UGN.
+# Column of bentonite is in contact with water surface (pressure_head=0) at its bottom side other sides are impermeable,
+# there is a hole at the top side so the air can vent out freely.
+# 
+# 
+problem: !SequentialCoupling
+  description: Test10 - Unsteady flow in 2D, Lumped Mixed Hybrid
+  mesh:
+    mesh_file: ./input/test10_bentonit_0.001.msh
+    #mesh_file: ./input/test10_bentonit_0.005.msh
+  primary_equation: !Unsteady_LMH
+    output_specific:
+    soil_model: irmay
+    time: # time in hours (consistent with conductivity)
+      end_time: 3000       # original experiment from UGN up to time 6000 h
+      init_dt: 1
+        # current time step enlargement logic do not allow to extent time step up to the output timestep
+        # maximum timestep wil be just 50.
+      max_dt: 300
+      min_dt: 0.1
+
+    input_fields:
+      - r_set: .bc_bottom
+        bc_type:  # :total_flux  # Select either 'robin' or 'neumann' according to the value of 'bc_flux', 'bc_pressure', 'bc_sigma'.
+        bc_pressure: 0
+        bc_robin_sigma: 1e6
+
+    solver: !Petsc
+      a_tol: 1e-11
+    n_schurs: 2
+    output:
+      output_stream:
+        file: ./flow.pvd
+        format: !vtk
+          variant: ascii
+        time_step: 100
+        observe_points:
+          - [0, 0, -0.25]
+          - [0, 0, -0.2]
+          - [0, 0, -0.15]
+          - [0, 0, -0.1]
+          - [0, 0, -0.05]
+          - [0, 0, 0.0]
+      output_fields:
+        - pressure_p0
+        - velocity_p0
+      observe_fields: [pressure_p0, velocity_p0]
+    balance:
+      cumulative: true
+
