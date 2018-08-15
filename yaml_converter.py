@@ -56,10 +56,9 @@ def get_parsed_args(args):
                              "Without N specified undo all conversions. ")
     parser.add_argument("--report-actions", action="store_true",
                         help="Report used actions and files they are used in.")
-    parser.add_argument('in_file',
+    parser.add_argument('in_files', nargs='*',
                         help="Input YAML (or CON) file(s). Wildcards accepted.")
 
-    print(args)
     return parser.parse_args(args)
 
 # TODO:
@@ -136,13 +135,13 @@ def main(cmd_args):
     args = get_parsed_args(cmd_args)
 
 
-    files = glob.glob(args.in_file)
+    files = [ f for in_file in args.in_files for f in glob.glob(in_file) ]
     if not files:
         raise Exception("No file to convert for pattern: %s"%args.in_file)
 
     action_files={}
     for fname in files:
-        print("File: ", fname)
+        #print("File: ", fname)
         if args.dry_run:
             fname_in = fname
             fname_out = None
@@ -152,9 +151,10 @@ def main(cmd_args):
                 fname_out = args.output
 
         if fname_in is None:
+            logging.info("Skipping backup file: {}".format(fname))
             continue
 
-        print("Convert: ", fname)
+        #print("Convert: ", fname)
         try:
             actions = convert(changes, args.to_version, fname_in, fname_out)
         except ExcFailedConversion:
