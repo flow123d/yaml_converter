@@ -187,6 +187,10 @@ def changes_to_310(changes):
     # FieldElementwise to FieldFE
     changes.rename_tag("/problem/**/input_fields/#/*!FieldElementwise", old_tag="FieldElementwise", new_tag="FieldFE")
 
+    changes.add_key_to_map("/problem/**/input_fields/#/*!FieldInterpolatedP0",
+                            key="interpolation",
+                            value="P0_intersection")
+    changes.rename_tag("/problem/**/input_fields/#/*!FieldInterpolatedP0", old_tag="FieldInterpolatedP0", new_tag="FieldFE")
 
 def make_changes():
     changes = Changes()
