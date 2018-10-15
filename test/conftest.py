@@ -1,10 +1,13 @@
 import pytest
 import os
-from yaml_parser_extra import get_yaml_serializer
 import filecmp
 import re
 
 source_dir = os.path.dirname(os.path.abspath(__file__))
+import sys
+sys.path.append(os.path.join(source_dir, ".."))
+from yaml_parser_extra import get_yaml_serializer
+
 
 # Create list of test files for the flow123d_input test.
 def pytest_generate_tests(metafunc):
