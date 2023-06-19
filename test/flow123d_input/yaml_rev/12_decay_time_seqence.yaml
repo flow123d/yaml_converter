@@ -1,11 +1,14 @@
-problem: !SequentialCoupling
-  description: Test12 - narrow radioaoctive decay chain, with transport switched enabled
-    but with zero pressure gradient
+flow123d_version: 3.1.0
+problem: !Coupling_Sequential
+  description: Test12 - narrow radioaoctive decay chain, with transport switched enabled but with zero pressure gradient
   mesh:
     mesh_file: ./input/narrow_2d_chanel.msh
-  primary_equation: !Steady_MH
+  flow_equation: !Flow_Darcy_MH
+    nonlinear_solver:
+      linear_solver: !Petsc
+        a_tol: 1.0e-07
     input_fields:
-      - r_set: BULK
+      - region: BULK
         conductivity: 0.0001
       - region: .left
         bc_type: dirichlet
@@ -13,19 +16,17 @@ problem: !SequentialCoupling
       - region: .right
         bc_type: dirichlet
         bc_pressure: 0
+    output_stream:
+      file: ./flow.pvd
+      format: !vtk
+        variant: ascii
     output:
-      output_stream:
-        file: ./flow.pvd
-        format: !vtk
-          variant: ascii
-      output_fields:
+      fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    balance: true
-    solver: !Petsc
-      a_tol: 1.0e-07
-  secondary_equation: !TransportOperatorSplitting
+    balance: {}
+  solute_equation: !Coupling_OperatorSplitting
     substances:
       - A
       - B
@@ -35,25 +36,26 @@ problem: !SequentialCoupling
     solver: !Petsc
       a_tol: 1.0e-07
       r_tol: 1.0e-07
+    transport: !Solute_Advection_FV
       # options:"-ksp_type gmres -ksp_monitor"
-    input_fields:
-      - r_set: BULK
-        init_conc:
-          - 0.0
-          - 0.0
-        porosity: 0.1
-      - region: .left
-        time: 1.0
-        bc_type: dirichlet
-        bc_conc:
-          - 1.0
-          - 0.0
-      - region: .left
-        time: 2.0
-        bc_type: dirichlet
-        bc_conc:
-          - 0.0
-          - 0.0
+      input_fields:
+        - region: BULK
+          init_conc:
+            - 0.0
+            - 0.0
+          porosity: 0.1
+        - region: .left
+          time: 1.0
+          bc_type: dirichlet
+          bc_conc:
+            - 1.0
+            - 0.0
+        - region: .left
+          time: 2.0
+          bc_type: dirichlet
+          bc_conc:
+            - 0.0
+            - 0.0
     #         TYPE:"RadioactiveDecay",
     #         decays:[
     #           {
@@ -85,7 +87,7 @@ problem: !SequentialCoupling
     reaction_term: !DualPorosity
       input_fields:
         - time: 0.0
-          r_set: ALL
+          region: ALL
           diffusion_rate_immobile:
             - 0.0
             - 0.0
@@ -94,7 +96,7 @@ problem: !SequentialCoupling
             - 0.0
             - 0.0
         - time: 4.0
-          r_set: ALL
+          region: ALL
           diffusion_rate_immobile:
             - 0.01
             - 0.01
@@ -108,5 +110,6 @@ problem: !SequentialCoupling
       file: transport.pvd
       format: !vtk
         variant: ascii
-      time_step: 1.0
+      times:
+        - step: 1.0
 # problem

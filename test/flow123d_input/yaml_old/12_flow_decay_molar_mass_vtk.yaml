@@ -1,45 +1,48 @@
-problem: !SequentialCoupling
-  description: Test12 - narrow radioaoctive decay chain, with transport switched enabled
-    but with zero pressure gradient
+flow123d_version: 3.1.0
+problem: !Coupling_Sequential
+  description: Test12 - narrow radioaoctive decay chain, with transport switched enabled but with zero pressure gradient
   mesh:
     mesh_file: ./input/sit_decay.msh
-  primary_equation: !Steady_MH
+  flow_equation: !Flow_Darcy_MH
+    nonlinear_solver:
+      linear_solver: !Petsc
+        a_tol: 1.0e-07
     input_fields:
       - rid: 1
         anisotropy: 0.01
-      - r_set: BOUNDARY
+      - region: .BOUNDARY
         bc_type: dirichlet
         bc_piezo_head: 0
+    output_stream:
+      file: ./flow.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
-      output_stream: 
-        file: ./flow.pvd
-        format: !vtk
-          variant: ascii
-        name: flow_output_stream
-      output_fields:
+      fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    balance: true
-    solver: !Petsc
-      a_tol: 1.0e-07
-  secondary_equation: !TransportOperatorSplitting
-    input_fields:
-      - rid: 1
-        init_conc:
-          - 1
-          - 0
-          - 0
-      - r_set: BOUNDARY
-        bc_conc:
-          - 1
-          - 0
-          - 0
-    output_stream: 
+    balance: {}
+  solute_equation: !Coupling_OperatorSplitting
+    transport: !Solute_Advection_FV
+      input_fields:
+        - rid: 1
+          init_conc:
+            - 1
+            - 0
+            - 0
+        - region: .BOUNDARY
+          bc_conc:
+            - 1
+            - 0
+            - 0
+    output_stream:
       file: ./transport_decay.pvd
       format: !vtk
         variant: ascii
-      time_step: 0.5
+      times:
+        - step: 0.5
       name: transport_output_stream
     substances:
       - name: A

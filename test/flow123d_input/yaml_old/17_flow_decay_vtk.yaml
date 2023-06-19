@@ -1,49 +1,53 @@
-problem: !SequentialCoupling
-  description: narrow radioaoctive decay chain, with transport switched enabled but
-    with zero pressure gradient, VTK output test12
+flow123d_version: 3.1.0
+problem: !Coupling_Sequential
+  description: narrow radioaoctive decay chain, with transport switched enabled but with zero pressure gradient, VTK output
+    test12
   mesh:
     mesh_file: ./input/sit_decay.msh
-  primary_equation: !Steady_MH
+  flow_equation: !Flow_Darcy_MH
+    nonlinear_solver:
+      linear_solver: !Petsc
+        a_tol: 1.0e-07
     input_fields:
       - rid: 1
         anisotropy: 0.01
-      - r_set: BOUNDARY
+      - region: .BOUNDARY
         bc_type: dirichlet
         bc_piezo_head: 0
+    output_stream:
+      file: ./decay.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
-      output_stream: 
-        file: ./decay.pvd
-        format: !vtk
-          variant: ascii
-        name: flow_output_stream
-      output_fields:
+      fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    balance: true
-    solver: !Petsc
-      a_tol: 1.0e-07
-  secondary_equation: !TransportOperatorSplitting
-    input_fields:
-      - rid: 1
-        init_conc:
-          - 0.01
-          - 0.02
-          - 0.03
-          - 0.04
-          - 0.05
-      - r_set: BOUNDARY
-        bc_conc:
-          - 0.01
-          - 0.02
-          - 0.03
-          - 0.04
-          - 0.05
-    output_stream: 
+    balance: {}
+  solute_equation: !Coupling_OperatorSplitting
+    transport: !Solute_Advection_FV
+      input_fields:
+        - rid: 1
+          init_conc:
+            - 0.01
+            - 0.02
+            - 0.03
+            - 0.04
+            - 0.05
+        - region: .BOUNDARY
+          bc_conc:
+            - 0.01
+            - 0.02
+            - 0.03
+            - 0.04
+            - 0.05
+    output_stream:
       file: ./transport_decay.pvd
       format: !vtk
         variant: ascii
-      time_step: 0.5
+      times:
+        - step: 0.5
       name: transport_output_stream
     substances:
       - A
@@ -55,8 +59,8 @@ problem: !SequentialCoupling
       end_time: 10.0
     reaction_term: !RadioactiveDecay
       ode_solver: !PadeApproximant
-        nominator_degree: 3
-        denominator_degree: 3
+        pade_nominator_degree: 3
+        pade_denominator_degree: 3
       decays:
         - radionuclide: A
           half_life: 1.3863

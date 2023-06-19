@@ -1,39 +1,39 @@
+flow123d_version: 3.1.0
 output_streams:
-  - &anchor1
-    file: test_20.pvd
+  - file: test_20.pvd
     format: !vtk
       variant: ascii
     name: flow_output_stream
-  - &anchor2
-    file: transport_test_20_sorp_rock.pvd
+  - file: transport_test_20_sorp_rock.pvd
     format: !vtk
       variant: ascii
     name: transport_output_stream
-problem: !SequentialCoupling
+problem: !Coupling_Sequential
   description: TestXXX-pork
   mesh:
-    mesh_file: ${INPUT}/test_20.msh
-  primary_equation: !Steady_MH
+    mesh_file: $INPUT_DIR$/test_20.msh
+  flow_equation: !Flow_Darcy_MH
+    nonlinear_solver:
+      linear_solver: !Petsc
+        a_tol: 1.0e-07
     input_fields:
       - region: rectangle
         conductivity: 0.125
-      - r_set: BOUNDARY
+      - region: .BOUNDARY
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: x
+    output_stream:
+      file: test_20.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
-      output_stream: 
-        file: test_20.pvd
-        format: !vtk
-          variant: ascii
-        name: flow_output_stream
       pressure_p0: flow_output_stream
       pressure_p1: flow_output_stream
       velocity_p0: flow_output_stream
-    balance: true
-    solver: !Petsc
-      a_tol: 1.0e-07
-  secondary_equation: !TransportOperatorSplitting
+    balance: {}
+  solute_equation: !Coupling_OperatorSplitting
     substances:
       - A
       - As-lin
@@ -41,17 +41,18 @@ problem: !SequentialCoupling
       - Bs-lang
       - C
       - Cs-freund
-    input_fields:
-      - r_set: ALL
-        init_conc: 0
-        porosity: !FieldFormula
-          value: '0.25'
-      - r_set: BOUNDARY
-        bc_conc: !FieldFormula
-          value: 0.05*t
+    transport: !Solute_Advection_FV
+      input_fields:
+        - region: ALL
+          init_conc: 0
+          porosity: !FieldFormula
+            value: '0.25'
+        - region: .BOUNDARY
+          bc_conc: !FieldFormula
+            value: 0.05*t
     output:
       conc_mobile_p0: transport_output_stream
-      output_stream: 
+      output_stream:
         file: transport_test_20_sorp_rock.pvd
         format: !vtk
           variant: ascii

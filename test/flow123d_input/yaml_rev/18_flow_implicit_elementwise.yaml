@@ -1,51 +1,55 @@
-problem: !SequentialCoupling
-  description: '[u''test18:'', u''diffusion'', u''through'', u''fractures'']'
+flow123d_version: 3.1.0
+problem: !Coupling_Sequential
+  description: "[u'test18:', u'diffusion', u'through', u'fractures']"
   mesh:
     mesh_file: ./input/test18.msh
-  primary_equation: !Steady_MH
+  flow_equation: !Flow_Darcy_MH
+    nonlinear_solver:
+      linear_solver: !Petsc
+        a_tol: 1.0e-12
+        r_tol: 1.0e-12
     input_fields:
-      - r_set: BOUNDARY
+      - region: .BOUNDARY
         bc_type: dirichlet
         bc_pressure: 0
       - rid: 20
         cross_section: 0.01
       - rid: 24
         cross_section: 1
+    output_stream:
+      file: ./test18.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
-      output_stream: 
-        file: ./test18.pvd
-        format: !vtk
-          variant: ascii
-        name: flow_output_stream
-      output_fields:
+      fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    balance: true
-    solver: !Petsc
-      a_tol: 1.0e-12
-      r_tol: 1.0e-12
-  secondary_equation: !SoluteTransport_DG
-    input_fields:
-      - r_set: BOUNDARY
-        bc_conc: 0
-      - r_set: ALL
-        init_conc: !FieldElementwise
-          gmsh_file: ./input/test18_init.msh
-          field_name: concentration
-        diff_m: 0.1
-        dg_penalty: 100
-    output_stream: 
+    balance: {}
+  solute_equation: !Coupling_OperatorSplitting
+    transport: !Solute_AdvectionDiffusion_DG
+      solver: !Petsc
+        a_tol: 1.0e-12
+        r_tol: 1.0e-12
+      input_fields:
+        - region: .BOUNDARY
+          bc_conc: 0
+        - region: ALL
+          init_conc: !FieldFE
+            mesh_data_file: ./input/test18_init.msh
+            field_name: concentration
+          diff_m: 0.1
+          dg_penalty: 100
+    output_stream:
       file: ./transport-implicit.pvd
       format: !vtk
         variant: ascii
-      time_step: 0.001
+      times:
+        - step: 0.001
       name: transport_output_stream
     substances:
       - A
-    solver: !Petsc
-      a_tol: 1.0e-12
-      r_tol: 1.0e-12
     time:
       end_time: 0.01
       max_dt: 0.001

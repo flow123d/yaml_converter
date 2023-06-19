@@ -3,7 +3,7 @@
 # Author: Jan Stebel
 # Source for reference: qualitative
 
-flow123d_version: 3.0.0
+flow123d_version: 3.1.0
 problem: !Coupling_Sequential
   description: Interpolated boundary condition - small cube
   mesh:
@@ -16,7 +16,8 @@ problem: !Coupling_Sequential
     input_fields:
       - region: .IMPLICIT_BOUNDARY
         bc_type: dirichlet
-        bc_piezo_head: !FieldInterpolatedP0
+        bc_piezo_head: !FieldFE
+          interpolation: P0_intersection
           mesh_data_file: ref_out/05_interpolation_large_cube/large_cube.msh
           field_name: piezo_head_p0
       - region: BULK

@@ -1,10 +1,14 @@
-flow123d_version: 3.0.0
+flow123d_version: 3.1.0
 problem: !Coupling_Sequential
   description: Flow in 2d-1d domain, non-compatible mesh
   mesh:
     mesh_file: ../00_mesh/square_2x2_frac_nc.msh
   flow_equation: !Flow_Darcy_MH
     output_specific:
+      fields:
+        - velocity_diff
+        - pressure_diff
+        - div_diff
       compute_errors: true
     nonlinear_solver:
       linear_solver: !Petsc
@@ -31,9 +35,6 @@ problem: !Coupling_Sequential
         - pressure_p0
         - pressure_p1
         - velocity_p0
-        - velocity_diff
-        - pressure_diff
-        - div_diff
     balance: {}
     output_stream:
       file: ./square.pvd

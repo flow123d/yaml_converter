@@ -1,52 +1,54 @@
+flow123d_version: 3.1.0
 output_streams:
-  - &anchor1
-    file: test_20.pvd
+  - file: test_20.pvd
     format: !vtk
       variant: ascii
     name: flow_output_stream
-  - &anchor2
-    file: transport_test_20.pvd
+  - file: transport_test_20.pvd
     format: !vtk
       variant: ascii
     time_step: 0.5
     name: transport_output_stream
-problem: !SequentialCoupling
+problem: !Coupling_Sequential
   description: Adsorption all
   mesh:
     mesh_file: input/test_20.msh
-  primary_equation: !Steady_MH
+  flow_equation: !Flow_Darcy_MH
+    nonlinear_solver:
+      linear_solver: !Petsc
+        a_tol: 1.0e-07
     input_fields:
       - region: rectangle
         conductivity: 1
-      - r_set: BOUNDARY
+      - region: .BOUNDARY
         bc_type: dirichlet
         bc_pressure: 0
+    output_stream:
+      file: test_20.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
-      output_stream: 
-        file: test_20.pvd
-        format: !vtk
-          variant: ascii
-        name: flow_output_stream
-      output_fields:
+      fields:
         - pressure_p0
         - velocity_p0
-    balance: true
-    solver: !Petsc
-      a_tol: 1.0e-07
-  secondary_equation: !TransportOperatorSplitting
+    balance: {}
+  solute_equation: !Coupling_OperatorSplitting
     substances:
       - A
-    input_fields:
-      - r_set: ALL
-        init_conc: 1
-        porosity: 0.25
-      - r_set: BOUNDARY
-        bc_conc: 1
-    output_stream: 
+    transport: !Solute_Advection_FV
+      input_fields:
+        - region: ALL
+          init_conc: 1
+          porosity: 0.25
+        - region: .BOUNDARY
+          bc_conc: 1
+    output_stream:
       file: transport_test_20.pvd
       format: !vtk
         variant: ascii
-      time_step: 0.5
+      times:
+        - step: 0.5
       name: transport_output_stream
     time:
       end_time: 5.0
@@ -58,15 +60,16 @@ problem: !SequentialCoupling
         - 10.0
       input_fields:
         - time: 0.0
-          r_set: ALL
+          region: ALL
           rock_density: 1.0
           sorption_type: linear
           isotherm_mult: 0.0
         - time: 2.0
-          r_set: ALL
+          region: ALL
           rock_density: 1.0
           sorption_type: linear
           isotherm_mult: 100.0
-      output_fields: []
+      output:
+        fields: []
     balance:
       cumulative: true

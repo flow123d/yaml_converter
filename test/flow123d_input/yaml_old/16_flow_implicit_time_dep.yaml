@@ -1,68 +1,77 @@
+flow123d_version: 3.1.0
 COMMENT_Stop_time: '1275'
-problem: !SequentialCoupling
+problem: !Coupling_Sequential
   description: Steady flow + transport with time dependent source
   mesh:
     mesh_file: ./input/test16.msh
     regions:
-      - name: left_source
+      - !From_Elements
+        name: left_source
         id: 100
         element_list:
           - 124
-      - name: right_source
+      - !From_Elements
+        name: right_source
         id: 200
         element_list:
           - 721
-  primary_equation: !Steady_MH
+  flow_equation: !Flow_Darcy_MH
+    nonlinear_solver:
+      linear_solver: !Petsc
+        a_tol: 1.0e-12
+        r_tol: 1.0e-12
     n_schurs: 2
     input_fields:
-      - r_set: BOUNDARY
+      - region: .BOUNDARY
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: 0.2*y
       - rid: 7
         cross_section: 1
         conductivity: 1
+    output_stream:
+      file: ./flow_test16.pvd
+      format: !vtk
+        variant: ascii
+      name: flow_output_stream
     output:
-      output_stream: 
-        file: ./flow_test16.pvd
-        format: !vtk
-          variant: ascii
-        name: flow_output_stream
-      output_fields:
+      fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    balance: true
-    solver: !Petsc
-      a_tol: 1.0e-12
-      r_tol: 1.0e-12
-  secondary_equation: !SoluteTransport_DG
+    balance: {}
+  solute_equation: !Coupling_OperatorSplitting
     dual_porosity: false
-    input_fields:
-      - region: IMPLICIT BOUNDARY
-        bc_conc: 0
-      - rid: 7
-        init_conc: 0
-        porosity: 1
-      - rid: 100
-        sources_density: !FieldFormula
-          value: max(4-t,0)
-      - rid: 200
-        time: 2
-        sources_sigma: 1
-        sources_conc: 1
-      - rid: 200
-        time: 4
-        sources_sigma: 0
-      - rid: 7
-        time: 4
-        porosity: !FieldFormula
-          value: 4/t
-    output_stream: 
+    transport: !Solute_AdvectionDiffusion_DG
+      solver: !Petsc
+        a_tol: 1.0e-12
+        r_tol: 1.0e-12
+      input_fields:
+        - region: .IMPLICIT_BOUNDARY
+          bc_conc: 0
+        - rid: 7
+          init_conc: 0
+          porosity: 1
+        - rid: 100
+          sources_density: !FieldFormula
+            value: max(4-t,0)
+        - rid: 200
+          time: 2
+          sources_sigma: 1
+          sources_conc: 1
+        - rid: 200
+          time: 4
+          sources_sigma: 0
+        - rid: 7
+          time: 4
+          porosity: !FieldFormula
+            value: 4/t
+    output_stream:
       file: ./transport_test16.pvd
       format: !vtk
         variant: ascii
-      time_step: 1
+      times:
+        - step: 1
       name: transport_output_stream
     substances:
       - conc
@@ -70,8 +79,5 @@ problem: !SequentialCoupling
       end_time: 10
       max_dt: 1.0
       min_dt: 1.0
-    solver: !Petsc
-      a_tol: 1.0e-12
-      r_tol: 1.0e-12
     balance:
       cumulative: true

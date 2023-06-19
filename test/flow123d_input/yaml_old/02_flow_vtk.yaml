@@ -1,17 +1,24 @@
-problem: !SequentialCoupling
+flow123d_version: 3.1.0
+problem: !Coupling_Sequential
   description: Test2 - Transport 1D-2D (convection, dual porosity, sorption)
   mesh:
     mesh_file: ./input/compatible.msh
-    sets:
-      - name: subset
-        region_labels:
-          - 2d
-          - 1d
-      - name: .sides
-        region_labels:
+    regions:
+      - !Union
+        name: .sides
+        regions:
           - .2d
           - .1d
-  primary_equation: !Steady_MH
+      - !Union
+        name: subset
+        regions:
+          - 2d
+          - 1d
+  flow_equation: !Flow_Darcy_MH
+    nonlinear_solver:
+      linear_solver: !Petsc
+        a_tol: 1.0e-12
+        r_tol: 1.0e-12
     input_fields:
       - region: 1d
         anisotropy: 10
@@ -20,40 +27,40 @@ problem: !SequentialCoupling
       - region: 2d
         anisotropy: 1
         cross_section: 1
-      - r_set: .sides
+      - region: .sides
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: x
-    balance: true
+    balance: {}
+    output_stream:
+      file: ./test2.pvd
+      format: !vtk
+        variant: ascii
     output:
-      output_stream:
-        file: ./test2.pvd
-        format: !vtk
-          variant: ascii
-      output_fields:
+      fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
         - region_id
-    solver: !Petsc
-      a_tol: 1.0e-12
-      r_tol: 1.0e-12
-  secondary_equation: !TransportOperatorSplitting
-    input_fields:
-      - r_set: .sides
-        bc_conc: !FieldFormula
-          value: x/12.75
-      - r_set: subset
-        init_conc: 0
-        porosity: 0.25
+  solute_equation: !Coupling_OperatorSplitting
+    transport: !Solute_Advection_FV
+      input_fields:
+        - region: .sides
+          bc_conc: !FieldFormula
+            value: x/12.75
+        - region: subset
+          init_conc: 0
+          porosity: 0.25
+      output:
+        fields:
+          - conc
+          - region_id
     output_stream:
       file: ./transport.pvd
       format: !vtk
         variant: ascii
-      time_step: 0.5
-    output_fields:
-      - conc
-      - region_id
+      times:
+        - step: 0.5
     substances:
       - A
       - B
@@ -63,7 +70,7 @@ problem: !SequentialCoupling
       cumulative: true
     reaction_term: !DualPorosity
       input_fields:
-        - r_set: subset
+        - region: subset
           diffusion_rate_immobile:
             - 0.01
             - 0.01
@@ -71,7 +78,6 @@ problem: !SequentialCoupling
           init_conc_immobile:
             - 0.0
             - 0.0
-      output_fields: []
       reaction_mobile: !SorptionMobile
         solvent_density: 1.0
         substances:
@@ -81,7 +87,7 @@ problem: !SequentialCoupling
           - 1.0
           - 1.0
         input_fields:
-          - r_set: subset
+          - region: subset
             rock_density: 1.0
             sorption_type:
               - linear
@@ -90,7 +96,8 @@ problem: !SequentialCoupling
             isotherm_other:
               - 0
               - 0.5
-        output_fields: []
+        output:
+          fields: []
       reaction_immobile: !SorptionImmobile
         solvent_density: 1.0
         substances:
@@ -100,7 +107,7 @@ problem: !SequentialCoupling
           - 1.0
           - 1.0
         input_fields:
-          - r_set: subset
+          - region: subset
             rock_density: 1.0
             sorption_type:
               - linear
@@ -109,4 +116,7 @@ problem: !SequentialCoupling
             isotherm_other:
               - 0
               - 0.5
-        output_fields: []
+        output:
+          fields: []
+      output:
+        fields: []
