@@ -192,6 +192,25 @@ def changes_to_310(changes):
                             value="P0_intersection")
     changes.rename_tag("/problem/**/input_fields/#/*!FieldInterpolatedP0", old_tag="FieldInterpolatedP0", new_tag="FieldFE")
 
+def changes_to_400(changes):
+    #changes.replace_value("/problem/**/(mesh_data_file|mesh_file|script_file)/",
+    #                      re_forward=("\$\{INPUT\}", "$INPUT_DIR$"),
+    #                      re_backward=("\$INPUT_DIR\$","\$\{INPUT\}"))
+    
+    #changes.rename_key("/problem/mesh/", old_key="global_observe_search_radius", new_key="global_snap_radius")
+
+    #changes.add_key_to_map("problem/flow_equation/output_specific/",
+    #                        key="fields",
+    #                        value=CommentedSeq())
+    
+    #changes.move_value("/problem/flow_equation/output/fields/#/::velocity_diff",
+    #                   "/problem/flow_equation/output_specific/fields/#/")
+
+    #changes.add_key_to_map("/problem/**/input_fields/#/*!FieldInterpolatedP0",
+    #                        key="interpolation",
+    #                        value="P0_intersection")
+    #changes.rename_tag("/problem/**/input_fields/#/*!FieldInterpolatedP0", old_tag="FieldInterpolatedP0", new_tag="FieldFE")
+
 def make_changes():
     changes = Changes()
 
@@ -212,4 +231,7 @@ def make_changes():
     changes.new_version("3.0.0_dev")
     changes_to_310(changes)
     changes.new_version("3.1.0")
+
+    changes_to_400(changes)
+    changes.new_version("4.0.0")
     return changes
