@@ -193,23 +193,35 @@ def changes_to_310(changes):
     changes.rename_tag("/problem/**/input_fields/#/*!FieldInterpolatedP0", old_tag="FieldInterpolatedP0", new_tag="FieldFE")
 
 def changes_to_400(changes):
-    #changes.replace_value("/problem/**/(mesh_data_file|mesh_file|script_file)/",
-    #                      re_forward=("\$\{INPUT\}", "$INPUT_DIR$"),
-    #                      re_backward=("\$INPUT_DIR\$","\$\{INPUT\}"))
-    
-    #changes.rename_key("/problem/mesh/", old_key="global_observe_search_radius", new_key="global_snap_radius")
-
-    #changes.add_key_to_map("problem/flow_equation/output_specific/",
-    #                        key="fields",
-    #                        value=CommentedSeq())
-    
-    #changes.move_value("/problem/flow_equation/output/fields/#/::velocity_diff",
-    #                   "/problem/flow_equation/output_specific/fields/#/")
-
-    #changes.add_key_to_map("/problem/**/input_fields/#/*!FieldInterpolatedP0",
-    #                        key="interpolation",
-    #                        value="P0_intersection")
-    #changes.rename_tag("/problem/**/input_fields/#/*!FieldInterpolatedP0", old_tag="FieldInterpolatedP0", new_tag="FieldFE")
+    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+                         re_forward=("\^", "**"),
+                         re_backward=("\*\*","^"))
+    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+                         re_forward=("max\(", "maximum("),
+                         re_backward=("maximum\(", "max(") )
+    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+                         re_forward=("min\(", "minimum("),
+                         re_backward=("minimum\(", "min(") )
+    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+                         re_forward=("Pi", "pi"),
+                         re_backward=("pi", "Pi") )
+    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+                         re_forward=("E", "e"),
+                         re_backward=("e", "E") )
+    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+                         re_forward=("!", " not "),
+                         re_backward=(" not ", "!") )
+    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+                         re_forward=("&", " and "),
+                         re_backward=(" and ", "&") )
+    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+                         re_forward=("|", " or "),
+                         re_backward=(" or ", "|") )
+    # "="   > "==");
+    # "<==" > "<="
+    # ">==" > ">="
+    # ":="  > "="
+    # ternary operator
 
 def make_changes():
     changes = Changes()
