@@ -41,7 +41,7 @@ def yaml_serializer():
 
 @pytest.fixture
 def yaml_files_cmp():
-    return _yaml_files_cmp
+    return _yaml_files_cmp_with_output
 
 def _yaml_files_cmp(ref,out):
     yml = get_yaml_serializer()
@@ -50,3 +50,31 @@ def _yaml_files_cmp(ref,out):
     with open(ref, "w") as f:
         yml.dump(t, f)
     return filecmp.cmp(ref, out)
+
+def _yaml_files_cmp_with_output(ref,out):
+    # reading files
+    f_ref = open(ref, "r")
+    f_out = open(out, "r")
+
+    f_ref_data = f_ref.readlines()
+    f_out_data = f_out.readlines()
+
+    i = 0
+    is_same = True
+
+    for ref_line, out_line in zip(f_ref_data, f_out_data):  # or izip_longest
+        i += 1
+
+        # matching lines from both files
+        if ref_line != out_line:
+            # print that line from both files
+            print("Line ", i, ":")
+            print("\tRef file:", ref_line, end='')
+            print("\tOut file:", out_line, end='')
+            is_same = False
+
+    # closing files
+    f_ref.close()
+    f_out.close()
+
+    return is_same
