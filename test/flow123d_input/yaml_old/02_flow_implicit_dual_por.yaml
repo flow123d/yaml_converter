@@ -39,8 +39,8 @@ problem: !Coupling_Sequential
         - pressure_p1
         - velocity_p0
         - region_id
-    nonlinear_solver: 
-      linear_solver:  !Petsc
+    nonlinear_solver:
+      linear_solver: !Petsc
         a_tol: 1.0e-12
         r_tol: 1.0e-12
   
@@ -53,7 +53,7 @@ problem: !Coupling_Sequential
         init_conc: 0
         porosity: 0.25
         diff_m: 1e-6
-        disp_l: 
+        disp_l:
         - 0
         - 0.5
         disp_t:
@@ -62,7 +62,7 @@ problem: !Coupling_Sequential
       output:
         fields:
           - conc
-          - region_id        
+          - region_id
       solver: !Petsc
         a_tol: 1.0e-12
         r_tol: 1.0e-12

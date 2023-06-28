@@ -14,7 +14,7 @@
 # 0.3      0.6907                               -0.5424
 # 0.6      0.4770                               -0.3746
 # 1        0.2912                               -0.2287
-flow123d_version: 2.0.0
+flow123d_version: 4.0.0
 problem: !Coupling_Sequential
   description: Test15 - 2D unsteady flow LM
   mesh:
@@ -31,7 +31,7 @@ problem: !Coupling_Sequential
         conductivity: 0.5
         cross_section: 1.0
         init_pressure: !FieldFormula
-            value: sin(Pi/2*x)
+          value: sin(Pi/2*x)
       - region: .bc_inflow
         bc_type: dirichlet
         bc_pressure: 0
@@ -56,7 +56,7 @@ problem: !Coupling_Sequential
       end_time: 1.0
       max_dt: 0.01
       min_dt: 0.01
-    output_stream: 
+    output_stream:
       file: ./test15.pvd
       format: !vtk
         variant: ascii
