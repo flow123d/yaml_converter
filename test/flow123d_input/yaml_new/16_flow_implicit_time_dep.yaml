@@ -54,7 +54,7 @@ problem: !Coupling_Sequential
           porosity: 1
         - rid: 100
           sources_density: !FieldFormula
-            value: max(4-t,0)
+            value: maximum(4-t,0)
         - rid: 200
           time: 2
           sources_sigma: 1

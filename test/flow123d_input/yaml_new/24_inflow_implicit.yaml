@@ -16,23 +16,23 @@ problem: !Coupling_Sequential
       - region: .left
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: sub := x-0.5; sub*y
+          value: sub = x-0.5; sub*y
       - region: .bottom
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: if(t=0, 0, (x-0.5)*y)
+          value: ' (( 0) if (t==0) else ( (x-0.5)*y)) '
       - region: .top
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: if(x<=0.5, y, (x-0.5)*y)
+          value: ' (( y) if (x<=0.5) else ( (x-0.5)*y)) '
       - region: .front
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: if((x<0.5)&(y>0)|(x>0.5)&(y<0), 0, (x-0.5)*y)
+          value: ' (( 0) if ((x<0.5) and (y>0) or (x>0.5) and (y<0)) else ( (x-0.5)*y)) '
       - region: .back
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: if(x<0.5, 0, if(x>1.5, 1, x-0.5))
+          value: ' (( 0) if (x<0.5) else (( 1) if (x>1.5) else ( x-0.5)) )) '
     output_stream:
       file: ./flow.pvd
       format: !vtk
@@ -55,7 +55,7 @@ problem: !Coupling_Sequential
           bc_conc: 3
         - region: domain
           diff_m: !FieldFormula
-            value: if(y>0.5,0,1e-2)
+            value: ' ((0) if (y>0.5) else (1e-2)) '
     output_stream:
       file: ./transport.pvd
       format: !vtk
