@@ -215,13 +215,25 @@ def changes_to_400(changes):
                          re_forward=("&", " and "),
                          re_backward=(" and ", "&") )
     changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
-                         re_forward=("|", " or "),
+                         re_forward=("\|", " or "),
                          re_backward=(" or ", "|") )
-    # "="   > "==");
-    # "<==" > "<="
-    # ">==" > ">="
-    # ":="  > "="
-    # ternary operator
+    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/",
+                         re_forward=("([^><:])=", "\\1=="),
+                         re_backward=("==", "=") )
+    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/",
+                         re_forward=(":=", "="),
+                         re_backward=("([^><=])=([^=])", "\\1:=\\2") )
+    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/",
+                         re_forward=(
+                             "(.*)(if\()((?:[^()]*)|((?:[^()]*)\((?:[^()]*)\)(?:[^()]*))*),((?:[^()]*)|((?:[^()]*)\((?:[^()]*)\)(?:[^()]*))*),((?:[^()]*)|((?:[^()]*)\((?:[^()]*)\)(?:[^()]*))*)(\))(.*)",
+                             "\\1 ((\\5) if (\\3) else (\\7)) \\10"
+    #                         "((.*)(if\()((?P<RR>(?:[^()]*)|((?:[^()]*)\((?P>RR)\)(?:[^()]*))*)),((?P>RR)),((?P>RR))(\))(.*))",
+    #                         "\\1 ((\\6) if (\\3) else (\\7)) \\9"
+                         ),
+                         re_backward=(
+                             "((.*)( if )(((.*)",
+                             "\\1 if \\3 # backward conversion of if is not supported, check and convert formula manually"
+                         ))
 
 def make_changes():
     changes = Changes()
