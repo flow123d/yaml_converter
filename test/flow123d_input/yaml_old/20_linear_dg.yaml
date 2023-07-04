@@ -9,8 +9,9 @@ output_streams:
   file: transport_test_20.pvd
   format: !vtk
     variant: ascii
-  time_step: 0.5
   name: transport_output_stream
+  times:
+    - step: 0.5
 
 problem: !Coupling_Sequential
   description: Adsorption all
@@ -34,10 +35,7 @@ problem: !Coupling_Sequential
     nonlinear_solver: 
       linear_solver: !Petsc
         a_tol: 1.0e-07
-    output_stream: 
-      file: test_20.pvd
-      format: !vtk
-        variant: ascii
+    output_stream: *anchor1
   solute_equation: !Coupling_OperatorSplitting
     substances:
     - A
@@ -51,13 +49,7 @@ problem: !Coupling_Sequential
           value: 0.05*t
       solver: !Petsc
         a_tol: 1.0e-07
-    output_stream: 
-      file: transport_test_20.pvd
-      format: !vtk
-        variant: ascii
-      name: transport_output_stream
-      times:
-        - step: 0.5
+    output_stream: *anchor2
     time:
       end_time: 15.0
     reaction_term: !Sorption
