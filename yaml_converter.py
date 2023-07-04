@@ -18,7 +18,7 @@ from yaml_parser_extra import get_yaml_serializer
 from YAMLConverter import Changes
 #from YAMLConverter import
 
-import re
+import regex as re
 import os
 import sys
 import argparse
