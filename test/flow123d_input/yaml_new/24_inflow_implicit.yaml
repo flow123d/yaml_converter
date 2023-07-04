@@ -20,11 +20,11 @@ problem: !Coupling_Sequential
       - region: .bottom
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: ' (( 0) if (t==0) else ( (x-0.5)*y)) '
+          value: ' (( 0) if (t==0) else ( minimum(x-0.5,y))) '
       - region: .top
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: ' (( y) if (x<=0.5) else ( (x-0.5)*y)) '
+          value: ' (( 0) if (x<0.5) else (  (( 1) if (x>1.5) else ( x-0.5)) )) '
       - region: .front
         bc_type: dirichlet
         bc_pressure: !FieldFormula
@@ -32,7 +32,9 @@ problem: !Coupling_Sequential
       - region: .back
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: ' (( 0) if (x<0.5) else (  (( 1) if (x>1.5) else ( x-0.5)) )) '
+          value: 'if(t==0, 0,  (( 1) if (t<=1) else (  (( 2) if (t<=2) else (  (( 3) if (t<=3) else (  (( 4) if (t<=4) else
+            (  (( 5) if (t<=5) else ( x-0.5)) )) )) )) )) ) # More than 5 nested if commands are not supported. Please fix
+            formula manually.'
     output_stream:
       file: ./flow.pvd
       format: !vtk

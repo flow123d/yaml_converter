@@ -20,11 +20,11 @@ problem: !Coupling_Sequential
       - region: .bottom
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: if(t=0, 0, (x-0.5)*y)
+          value: if(t=0, 0, min(x-0.5,y))
       - region: .top
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: if(x<=0.5, y, (x-0.5)*y)
+          value: if(x<0.5, 0, if(x>1.5, 1, x-0.5))
       - region: .front
         bc_type: dirichlet
         bc_pressure: !FieldFormula
@@ -32,7 +32,7 @@ problem: !Coupling_Sequential
       - region: .back
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: if(x<0.5, 0, if(x>1.5, 1, x-0.5))
+          value: if(t=0, 0, if(t<=1, 1, if(t<=2, 2, if(t<=3, 3, if(t<=4, 4, if(t<=5, 5, x-0.5))))))
     output_stream:
       file: ./flow.pvd
       format: !vtk
