@@ -223,17 +223,23 @@ def changes_to_400(changes):
     changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/",
                          re_forward=(":=", "="),
                          re_backward=("([^><=])=([^=])", "\\1:=\\2") )
+    # only forward conversion of if is supported, maximal number of nested if commands is 5
+    for i in range(5):
+        changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/",
+                             re_forward=(
+                                 "(.*)(if\()((?P<RR>(?:[^()]*)|((?:[^()]*)\((?P>RR)\)(?:[^()]*))*)),((?P>RR)),((?P>RR))(\))(.*)",
+                                 "\\1 ((\\6) if (\\3) else (\\7)) \\9"
+                             ),
+                             re_backward=("if", "if") )
     changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/",
-                         re_forward=(
-                             "(.*)(if\()((?:[^()]*)|((?:[^()]*)\((?:[^()]*)\)(?:[^()]*))*),((?:[^()]*)|((?:[^()]*)\((?:[^()]*)\)(?:[^()]*))*),((?:[^()]*)|((?:[^()]*)\((?:[^()]*)\)(?:[^()]*))*)(\))(.*)",
-                             "\\1 ((\\5) if (\\3) else (\\7)) \\10"
-    #                         "((.*)(if\()((?P<RR>(?:[^()]*)|((?:[^()]*)\((?P>RR)\)(?:[^()]*))*)),((?P>RR)),((?P>RR))(\))(.*))",
-    #                         "\\1 ((\\6) if (\\3) else (\\7)) \\9"
-                         ),
-                         re_backward=(
-                             "((.*)( if )(((.*)",
-                             "\\1 if \\3 # backward conversion of if is not supported, check and convert formula manually"
-                         ))
+                          re_forward=(
+                              "(.*)(if\()(.*)",
+                              "\\1if(\\3 # More than 5 nested if commands are not supported. Please fix formula manually."
+                          ),
+                          re_backward=(
+                              "((.*)( if )(((.*)",
+                              "\\1 if \\3 # Backward conversion of if is not supported. Check and convert formula manually"))
+
 
 def make_changes():
     changes = Changes()

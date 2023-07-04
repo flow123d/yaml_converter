@@ -32,7 +32,7 @@ problem: !Coupling_Sequential
       - region: .back
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: ' (( 0) if (x<0.5) else (( 1) if (x>1.5) else ( x-0.5)) )) '
+          value: ' (( 0) if (x<0.5) else (  (( 1) if (x>1.5) else ( x-0.5)) )) '
     output_stream:
       file: ./flow.pvd
       format: !vtk
