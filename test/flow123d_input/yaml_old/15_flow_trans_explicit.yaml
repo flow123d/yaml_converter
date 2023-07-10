@@ -8,7 +8,8 @@ problem: !Coupling_Sequential
       - region: ALL
         storativity: 1.0
       - region: domain
-        anisotropy: 1
+        anisotropy: !FieldFormula
+          value: [[x^2, 0, 0], [0, y^2, 0], [0, 0, z^2]]
         # default
         cross_section: 1
         # default
