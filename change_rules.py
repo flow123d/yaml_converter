@@ -193,45 +193,50 @@ def changes_to_310(changes):
     changes.rename_tag("/problem/**/input_fields/#/*!FieldInterpolatedP0", old_tag="FieldInterpolatedP0", new_tag="FieldFE")
 
 def changes_to_400(changes):
-    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+    path_set = PathSet(["/problem/**/input_fields/#/*!FieldFormula/value/",
+                        "/problem/**/input_fields/#/*!FieldFormula/value/#/,"
+                        "/problem/**/user_fields/#/*!FieldFormula/value/",
+                        "/problem/**/user_fields/#/*!FieldFormula/value/#/"])
+
+    changes.replace_value(path_set,
                          re_forward=("\^", "**"),
                          re_backward=("\*\*","^"))
-    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+    changes.replace_value(path_set,
                          re_forward=("max\(", "maximum("),
                          re_backward=("maximum\(", "max(") )
-    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+    changes.replace_value(path_set,
                          re_forward=("min\(", "minimum("),
                          re_backward=("minimum\(", "min(") )
-    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+    changes.replace_value(path_set,
                          re_forward=("Pi", "pi"),
                          re_backward=("pi", "Pi") )
-    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+    changes.replace_value(path_set,
                          re_forward=("E", "e"),
                          re_backward=("e", "E") )
-    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+    changes.replace_value(path_set,
                          re_forward=("!", " not "),
                          re_backward=(" not ", "!") )
-    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+    changes.replace_value(path_set,
                          re_forward=("&", " and "),
                          re_backward=(" and ", "&") )
-    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/", 
+    changes.replace_value(path_set,
                          re_forward=("\|", " or "),
                          re_backward=(" or ", "|") )
-    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/",
+    changes.replace_value(path_set,
                          re_forward=("([^><:])=", "\\1=="),
                          re_backward=("==", "=") )
-    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/",
+    changes.replace_value(path_set,
                          re_forward=(":=", "="),
                          re_backward=("([^><=])=([^=])", "\\1:=\\2") )
     # only forward conversion of if is supported, maximal number of nested if commands is 5
     for i in range(5):
-        changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/",
+        changes.replace_value(path_set,
                              re_forward=(
                                  "(.*)(if\()((?P<RR>(?:[^()]*)|((?:[^()]*)\((?P>RR)\)(?:[^()]*))*)),((?P>RR)),((?P>RR))(\))(.*)",
                                  "\\1 ((\\6) if (\\3) else (\\7)) \\9"
                              ),
                              re_backward=("if", "if") )
-    changes.replace_value("/problem/**/(input_fields|user_fields)/#/*!FieldFormula/value/",
+    changes.replace_value(path_set,
                           re_forward=(
                               "(.*)(if\()(.*)",
                               "\\1if(\\3 # More than 5 nested if commands are not supported. Please fix formula manually."
