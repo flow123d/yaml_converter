@@ -125,7 +125,10 @@ def convert(changes, to_version, fname_in, fname_out):
     return actions
 
 
-def main(cmd_args):
+def main(cmd_args = None):
+    if cmd_args is None:
+        cmd_args = sys.argv[1:]
+
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     log = logging.getLogger('Converter')
 
@@ -174,4 +177,4 @@ def main(cmd_args):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
