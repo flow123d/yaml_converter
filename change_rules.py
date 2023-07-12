@@ -194,9 +194,11 @@ def changes_to_310(changes):
 
 def changes_to_400(changes):
     path_set = PathSet(["/problem/**/input_fields/#/*!FieldFormula/value/",
-                        "/problem/**/input_fields/#/*!FieldFormula/value/#/,"
+                        "/problem/**/input_fields/#/*!FieldFormula/value/#/",
+                        "/problem/**/input_fields/#/*!FieldFormula/value/#/#/",
                         "/problem/**/user_fields/#/*!FieldFormula/value/",
-                        "/problem/**/user_fields/#/*!FieldFormula/value/#/"])
+                        "/problem/**/user_fields/#/*!FieldFormula/value/#/",
+                        "/problem/**/user_fields/#/*!FieldFormula/value/#/#/"])
 
     changes.replace_value(path_set,
                          re_forward=("\^", "**"),
