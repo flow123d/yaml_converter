@@ -148,7 +148,7 @@ def get_yaml_serializer():
 def get_node_tag(node):
     if hasattr(node, "tag"):
         tag = node.tag.value
-        if tag and len(tag) > 1 and tag[0] == '!' and tag[1] != '!':
+        if tag and len(tag) > 1 and tag[0] == '!':
             return tag
     return ""
 

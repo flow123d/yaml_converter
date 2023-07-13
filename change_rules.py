@@ -246,6 +246,13 @@ def changes_to_400(changes):
                           re_backward=(
                               "((.*)( if )(((.*)",
                               "\\1 if \\3 # Backward conversion of if is not supported. Check and convert formula manually"))
+    # Conversion of vector/tensor FieldFormula must be performed manually
+    #path_set = PathSet(["/problem/**/input_fields/#/*!FieldFormula/value!!seq/",
+    #                    "/problem/**/user_fields/#/*!FieldFormula/value!!seq/"])
+    changes.manual_change("/problem/**/input_fields/#/*!FieldFormula/value!!seq/",
+                          message_forward="Vector/tensor FieldFormula must be converted manually", # to a single string where components are separated by commas.",
+                          message_backward="Should not happen!")
+
 
 
 def make_changes():

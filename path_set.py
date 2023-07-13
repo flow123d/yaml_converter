@@ -92,7 +92,7 @@ class PathSet(object):
         # merge multiple '/'
         pp = re.sub('/+', '/', pp)
         # '/' = allow tag info just after key names
-        pp = re.sub('/', '(![a-zA-Z0-9_]@)?/', pp)
+        pp = re.sub('/', '(!!?[a-zA-Z0-9_]@)?/', pp)
         # return back all starts
         pp = re.sub('@', '*', pp)
         pp = pp.strip('/')
