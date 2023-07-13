@@ -1,0 +1,32 @@
+flow123d_version: 3.1.0
+problem: !Coupling_Sequential
+  description: Description
+  mesh:
+    mesh_file: ./input/test1_new.msh
+  flow_equation: !Flow_Darcy_MH
+    nonlinear_solver:
+      linear_solver: !Petsc
+        r_tol: 1.0e-10
+        a_tol: 1.0e-10
+    n_schurs: 2
+    input_fields:
+      - region: ALL
+        anisotropy: !FieldFormula
+          value:
+            - 0.4
+            - 0.5
+            - if(t>5,0.5,0.0)
+            - if(t>5,0.4,0.0)
+        sigma: 0.05
+    balance: {}
+    output_stream:
+      file: ./test1.msh
+      format: !gmsh
+        variant: ascii
+      name: flow_output_stream
+    output:
+      fields:
+        - piezo_head_p0
+        - pressure_p0
+        - pressure_p1
+        - velocity_p0
