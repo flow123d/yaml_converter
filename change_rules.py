@@ -192,7 +192,7 @@ def changes_to_310(changes):
                             value="P0_intersection")
     changes.rename_tag("/problem/**/input_fields/#/*!FieldInterpolatedP0", old_tag="FieldInterpolatedP0", new_tag="FieldFE")
 
-def changes_to_400(changes):
+def changes_to_400a01(changes):
     path_set = PathSet(["/problem/**/input_fields/#/*!FieldFormula/value/",
                         "/problem/**/input_fields/#/*!FieldFormula/value/#/",
                         "/problem/**/input_fields/#/*!FieldFormula/value/#/#/",
@@ -269,6 +269,6 @@ def make_changes():
     changes_to_310(changes)
     changes.new_version("3.1.0")
 
-    changes_to_400(changes)
-    changes.new_version("4.0.0")
+    changes_to_400a01(changes)
+    changes.new_version("4.0.0a01")
     return changes
