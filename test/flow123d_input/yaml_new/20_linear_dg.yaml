@@ -1,4 +1,4 @@
-flow123d_version: 4.0.0
+flow123d_version: 4.0.0a01
 output_streams:
   - &anchor1
     file: test_20.pvd
