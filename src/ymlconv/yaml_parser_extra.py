@@ -1,15 +1,30 @@
 import types
 import re
-
+from typing import *
+import dataclasses as dc
 import ruamel.yaml as ruml
-from ruamel.yaml.comments import CommentedMap, CommentedSeq
+
+from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedBase
+
+"""
+This module should provide a wrappers for the ruaml.yaml in order
+to:
+1. better document used functionalities and interfaces
+2. fill gaps in providead features
+3. hide changes between ruamel.yaml versions
+
+Currently there is no full wrapping as we need to make changes to the YAML file representation
+while preserving the comments and other representation details. That is exactly role of ruamel.yaml.
+"""
 
 CommentsTag = ruml.comments.Tag
 
 
-class CommentedScalar:
+class CommentedScalar(CommentedBase):
     """
-    Class to store all scalars with their tags
+    Class to store a scalar with its tag.
+    ruamel.yaml seems to store only tags presented at input,
+    for pattern matching we need tags for all nodes.
     """
     original_constructors = {}
 
@@ -45,10 +60,19 @@ class CommentedScalar:
 
 
 def construct_any_tag(self, tag_suffix, node):
+    '''
+    Used for tag prefix '!'
+    Seems to somehow force reintroduction of the '!' prefix to the tag value.
+    Intent not clear.
+    :param self:
+    :param tag_suffix:
+    :param node:
+     :return:
+    '''
     if tag_suffix is None:
         orig_tag = None
     else:
-        orig_tag = "!" + tag_suffix
+        orig_tag = tag_suffix
     if isinstance(node, ruml.ScalarNode):
 
         implicit_tag = self.composer.resolver.resolve(ruml.ScalarNode, node.value, (True, None))
@@ -141,16 +165,60 @@ def get_yaml_serializer():
     yml.width=120
     yml.representer.add_representer(CommentedScalar, CommentedScalar.to_yaml)
     yml.representer.add_representer(CommentedSeq, represent_commented_seq)
+    # Seems this has no effect, tag_prefix is possibly without leading '!'
     yml.constructor.add_multi_constructor("!", construct_any_tag)
     return yml
 
 
+
 def get_node_tag(node):
-    if hasattr(node, "tag"):
+    try:
         tag = node.tag.value
-        if tag and len(tag) > 1 and tag[0] == '!' and tag[1] != '!':
-            return tag
-    return ""
+        tag = tag.replace('tag:yaml.org,2002:', '!') # represent default tags as !<defult_name_suffix>
+        return tag
+    except:
+        return ""
+
+
+
+
+
+def unify_tree_dfs(node):
+    """
+    Convert tree to unified form, where all nodes are CommentedMap, CommentedSeq or CommentedScalar.
+    :param node:
+    :return:
+    """
+    if is_list_node(node):
+        for idx in range(len(node)):
+            node[idx] = unify_tree_dfs(node[idx])
+        if type(node) != CommentedSeq:
+            return CommentedSeq(node)
+        node.yaml_set_tag(u'tag:yaml.org,2002:seq')
+    elif is_map_node(node):
+        for key, child in node.items():
+            node[key] = unify_tree_dfs(child)
+        if type(node) != CommentedMap:
+            return CommentedMap(node)
+        node.yaml_set_tag(u'tag:yaml.org,2002:map')
+    elif is_scalar_node(node):
+        if type(node) != CommentedScalar:
+            tags_for_types = {
+                float: u'tag:yaml.org,2002:float',
+                int: u'tag:yaml.org,2002:int',
+                bool: u'tag:yaml.org,2002:bool',
+                str: u'tag:yaml.org,2002:str',
+                type(None): u'tag:yaml.org,2002:null'}
+            tag = None
+            for x_type, x_tag in tags_for_types.items():
+                if isinstance(node, x_type):
+                    tag = x_tag
+            # assert type(node) in tags_for_types
+            # tag = tags_for_types[type(node)]
+            return CommentedScalar(tag, node)
+    else:
+        assert False, "Unsupported node type: {}".format(type(node))
+    return node
 
 
 
@@ -158,18 +226,6 @@ class Address(list):
     '''
     Class to represent an address in the yaml file including the tag info.
     '''
-
-    def add(self, key, tag):
-        '''
-        Return new address object for given key and tag.
-        :param key:
-        :param tag:
-        :return:
-        '''
-        x = Address(self)
-        x.append((key, tag))
-        return x
-
     def __str__(self):
         '''
         Full string representation.
@@ -185,25 +241,79 @@ class Address(list):
         return "/" + "/".join([str(key) for key, tag in self])
 
 
-def iterate_nodes(nodes, address):
-    """
-    Iterate over subtree using DFS
-    :param nodes: list of nodes from root of the whole tree to root of the iterated subtree.
-    :param address: Address instance (address of the node) of the root of subtree
+@dc.dataclass
+class AddressNode:
+    _address: List[Tuple[str, str]] = dc.field()
+    _nodes_path: List[CommentedBase] = dc.field()
+    # TODO: introduce own wrapper object CommentedNode providing at least
+    # some guaranteed uniformity
 
-    :yield: (nodelist, address) ... for all nodes of the subtree
-    """
-    current = nodes[-1]
-    yield (nodes, address)
+    @classmethod
+    def file_root(cls, fname: str, loader=None):
+        if loader is None:
+            loader = get_yaml_serializer()
+        with open(fname, "r") as f:
+            root_node = unify_tree_dfs(loader.load(f))
+        root_address = [('', get_node_tag(root_node))]
+        root_node_path = [root_node]
+        return cls(root_address, root_node_path)
 
-    if is_list_node(current):
-        iterable = enumerate(current)
-    elif is_map_node(current):
-        iterable = current.items()
-    else:
-        return
+    def _child(self, key, child):
+        new_addr = self._address + [(key, get_node_tag(child))]
+        return AddressNode(new_addr, self._nodes_path + [child])
 
-    for key, child in iterable:
-        tag = get_node_tag(child)[1:]
-        yield from iterate_nodes(nodes + [child], address.add(key, tag))
+    def childs(self):
+        """
+        Iterator that yields AddressNode childs if the
+        self.yaml_node is a map or sequence.
+        The address attributes are produced in particular.
 
+        :return:
+        """
+        yaml_node = self.yaml_node
+        if is_list_node(yaml_node):
+            key_node_iter = enumerate(yaml_node)
+        elif is_map_node(yaml_node):
+            key_node_iter = yaml_node.items()
+        else:
+            return None
+
+        yield from (self._child(key, node) for key, node in key_node_iter)
+
+    def iterate_nodes(self):
+        yield self
+        for ch in self.childs():
+            yield from ch.iterate_nodes()
+
+    @property
+    def address(self):
+        return Address(self._address)
+
+    @property
+    def yaml_node(self):
+        return self._nodes_path[-1]
+
+    @property
+    def nodes_path(self):
+        return self._nodes_path
+
+#
+# def iterate_nodes(an: AddressNode):
+#     """
+#     Iterate over subtree using DFS
+#     :param nodes: list of nodes from root of the whole tree to root of the iterated subtree.
+#     :param address: Address instance (address of the node) of the root of subtree
+#
+#     :yield: (nodelist, address) ... for all nodes of the subtree
+#     """
+#     yield an
+#     current = an.yaml_node
+#     childs_iter = an.childs()
+#     if childs_iter is None:
+#         return
+#
+#     for key, child in childs_iter:
+#         #tag = get_node_tag(child)[1:]  # remove leading '!'
+#         tag = get_node_tag(child)   # tag without '!' alrady
+#     yield from an.childs()(nodes + [child], address.add(key, tag))
+#
