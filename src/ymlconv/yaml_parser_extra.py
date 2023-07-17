@@ -61,20 +61,19 @@ class CommentedScalar(CommentedBase):
 
 def construct_any_tag(self, tag_suffix, node):
     '''
-    Used for tag prefix '!'
-    Seems to somehow force reintroduction of the '!' prefix to the tag value.
-    Intent not clear.
-    :param self:
-    :param tag_suffix:
-    :param node:
-     :return:
+    A YAML construction of the custom tag nodes.
+    Should not be called for the default tag nodes.
+    :param self: a yaml constructor
+    :param tag_suffix: the custom tag including leading '!'
+    :param node: current parsed node
+     :return: new node
     '''
     if tag_suffix is None:
         orig_tag = None
     else:
         orig_tag = tag_suffix
     if isinstance(node, ruml.ScalarNode):
-
+        # Construct
         implicit_tag = self.composer.resolver.resolve(ruml.ScalarNode, node.value, (True, None))
         if implicit_tag in self.yaml_constructors:
             # constructor = CommentedScalar.original_constructors[implicit_tag]
@@ -91,10 +90,10 @@ def construct_any_tag(self, tag_suffix, node):
         yield scal
 
     elif isinstance(node, ruml.SequenceNode):
-        for seq in self.construct_yaml_seq(node):
-            seq.yaml_set_tag(orig_tag)
-            yield seq
-    elif isinstance(node, ruml.MappingNode):
+        for seq in self.construct_yaml_seq(node): # yields a single CommentedSeq just before it is filled with the data
+             seq.yaml_set_tag(orig_tag)
+             yield seq
+    elif isinstance(node, ruml.MappingNode): # yields a single CommentedMap just before it is filled with the data
         for map in self.construct_yaml_map(node):
             map.yaml_set_tag(orig_tag)
             yield map
@@ -193,14 +192,16 @@ def unify_tree_dfs(node):
         for idx in range(len(node)):
             node[idx] = unify_tree_dfs(node[idx])
         if type(node) != CommentedSeq:
-            return CommentedSeq(node)
-        node.yaml_set_tag(u'tag:yaml.org,2002:seq')
+            node =  CommentedSeq(node)
+        if node.tag.value is None:
+            node.yaml_set_tag(u'tag:yaml.org,2002:seq')
     elif is_map_node(node):
         for key, child in node.items():
             node[key] = unify_tree_dfs(child)
         if type(node) != CommentedMap:
-            return CommentedMap(node)
-        node.yaml_set_tag(u'tag:yaml.org,2002:map')
+            node = CommentedMap(node)
+        if node.tag.value is None:
+            node.yaml_set_tag(u'tag:yaml.org,2002:map')
     elif is_scalar_node(node):
         if type(node) != CommentedScalar:
             tags_for_types = {
@@ -215,7 +216,7 @@ def unify_tree_dfs(node):
                     tag = x_tag
             # assert type(node) in tags_for_types
             # tag = tags_for_types[type(node)]
-            return CommentedScalar(tag, node)
+            node = CommentedScalar(tag, node)
     else:
         assert False, "Unsupported node type: {}".format(type(node))
     return node

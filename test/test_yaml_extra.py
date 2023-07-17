@@ -20,6 +20,10 @@ def test_addres_node():
         '/!!map/a!!seq/0!MyType',
         '/!!map/a!!seq/1!!int',
         '/!!map/b!!map',
-        '/!!map/b!!map/c!!seq',
-        '/!!map/b!!map/c!!seq/0!!str'
+        '/!!map/b!!map/a!!seq',
+        '/!!map/b!!map/a!!seq/0!!str',
+        '/!!map/c!MySeq',
+        '/!!map/c!MySeq/0!!int',
+        '/!!map/d!MyMap',
+        '/!!map/d!MyMap/a!!int',
     ]

@@ -4,5 +4,9 @@ a: !!seq
   - !MyType 1
   - !!int 2
 b: !!map
-  c: # defualt !!seq tag
+  a: # defualt !!seq tag
     - !!str 2
+c: !MySeq
+  - 1
+d: !MyMap
+  a: 2
