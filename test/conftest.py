@@ -45,6 +45,9 @@ def yaml_files_cmp():
 
 def _yaml_files_cmp(ref,out):
     yml = get_yaml_serializer()
+
+    # Perform the conversion on the reference file in order to nail out
+    # minor representation changes
     with open(ref, "r") as f:
         t=yml.load(f)
     with open(ref, "w") as f:

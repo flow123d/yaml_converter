@@ -25,7 +25,13 @@ class ActionFix:
             copyfile(self.in_file, fname)
         return fname
 
-    def perform(self, test_name, cmp):
+    def perform(self, test_name:str, cmp):
+        """
+
+        :param test_name: base of the corresponding file for that test
+        :param cmp: the file comparison function.
+        :return: None
+        """
         yml = get_yaml_serializer()
         changes = self.changes
         self.test_name_base = remove_prefix(test_name, "test_")
@@ -50,11 +56,19 @@ class ActionFix:
         with open(rev_file, "w") as f:
             yml.dump(root, f)
         assert cmp(rrf_file, rev_file)
+        return None
 
 @pytest.fixture
 def changes(request, yaml_files_cmp):
+    """
+    :param request: The pytest request object, used to get the test name.
+    :param yaml_files_cmp: the file comparison method
+    :return:
+    """
     fix = ActionFix()
+    # Yield empty changes object, in order to add test actions.
     yield fix.changes
+    # Perform test actions.
     fix.perform(request.node.name, yaml_files_cmp)
 
 ####################################

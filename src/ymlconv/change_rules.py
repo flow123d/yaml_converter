@@ -168,7 +168,7 @@ def changes_to_300(changes):
     changes.rename_key("/problem/**/input_fields/#/*!(FieldElementwise|FieldInterpolatedP0|FieldInterpolatedP1)/", old_key="gmsh_file", new_key="mesh_data_file")
 
 
-def changes_to_310(changes):
+def changes_to_310(changes: Changes):
     changes.replace_value("/problem/**/(mesh_data_file|mesh_file|script_file)/",
                           re_forward=("\$\{INPUT\}", "$INPUT_DIR$"),
                           re_backward=("\$INPUT_DIR\$","\$\{INPUT\}"))

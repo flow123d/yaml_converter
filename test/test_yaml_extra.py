@@ -4,14 +4,13 @@ provided in yaml_parse_extra.
 
 """
 import os
-from yaml_parser_extra import AddressNode
-
+from yaml_parser_extra import load_commented_yaml, AddressNode
 
 source_dir = os.path.dirname(os.path.abspath(__file__))
 
 def test_addres_node():
     fname_in = os.path.join(source_dir, "files_path_set", "test_yaml_wrap.yaml")
-    an = AddressNode.file_root(fname_in)
+    an = AddressNode.root(load_commented_yaml(fname_in))
     assert str(an.address) == '/!!map'
     node_addrs = [str(n.address) for n in an.iterate_nodes()]
     assert node_addrs == [
