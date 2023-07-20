@@ -38,6 +38,42 @@ Following constructs can be used:
 
 '(A|B|C)'        - match A or B or C. Can be used for both keys and tags.
 
+## Tail and value patterns
+
+Single path pattern could be composed from one, two or three patterns seprated by 
+the colon `:`. The first pattern is always the path pattern, 
+the second is the tail pattern, the third is the value pattern. 
+The tail and value patterns are empty by default. 
+
+The tail pattern restricts the modification rule only to the addresses that 
+contains the tail pattern as a subpath. E.g. path pattern `x(a|b):y` for the YAML file
+```commandline
+xa:
+  y: 2
+xb:
+  z: 3  
+```
+matches only the address `xa` as it contains subpath `y` but does not match the path `xb`.
+
+The value pattern restricts the modification rule only to the addresses that contains 
+a value which matches the value pattern.
+
+
+### YAML predefined tag names
+- 'null'
+- 'bool'
+- 'int'
+- 'float'
+- 'binary'
+- 'timestamp' - YAML recognize time and date in some format
+- 'omap' - ordered map, used by default by ruamel YAML instead of 'map'
+         coud be required explicitely 
+- 'pairs' - ?
+- 'set' - is a mapping where all keys have `null` value
+- 'str'
+- 'seq'
+- 'map'
+
 ## Change rules
 
 add_key_to_map(paths, key, value)

@@ -31,11 +31,11 @@ problem: !SequentialCoupling
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    balance: false
     solver: !Petsc
       a_tol: 1.0e-12
       r_tol: 1.0e-12
-  # primary equation
+    balance: false
+    # primary equation
   secondary_equation: !TransportOperatorSplitting
     substances:
       - name: age

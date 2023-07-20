@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ymlconv"
+authors = [
+    {name = "Jan Březina", email = "jan.brezina@tul.cz"},
+]
+description = "Converter for YAML input files, of various Flow123d input files versions."
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["YAML", "rules based conversion of file structure", "Flow123d"]
+license = {text = "GNU-3"}
+dependencies = ["ruamel.yaml==0.17.21", "regexp"]
+# ruamel.yaml - enables praservation of the YAML structure in read /write loop
+# regexp - PERL extensions
+dynamic = ["version"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["ymlconv"]
+
+
+#[project.optional-dependencies]
+#pdf = ["ReportLab>=1.2", "RXP"]
+#rest = ["docutils>=0.3", "pack ==1.1, ==1.3"]
+
+[project.scripts]
+ymlconv = "ymlconv.yaml_converter:main"
+
+# ... other project metadata fields as specified in:
+#     https://packaging.python.org/en/latest/specifications/declaring-project-metadata/

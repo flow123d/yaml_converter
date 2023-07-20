@@ -31,10 +31,10 @@ problem: !SequentialCoupling
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    balance: true
     solver: !Petsc
       a_tol: 1.0e-12
       r_tol: 1.0e-12
+    balance: true  
   # primary equation
   secondary_equation: !TransportOperatorSplitting
     substances:

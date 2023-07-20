@@ -16,16 +16,12 @@ Compatible with ruamel.yaml 0.15.31
 '''
 import ruamel.yaml as ruml
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
-from yaml_parser_extra import is_map_node, is_list_node, is_scalar_node, is_map_key, CommentedScalar
 import re
-import os
-import sys
-import argparse
-import fnmatch
 import logging
 import copy
 import inspect
-from path_set import PathSet
+from .path_set import PathSet
+from .yaml_parser_extra import unify_tree_dfs, AddressNode, is_map_node, is_list_node, is_scalar_node, is_map_key, CommentedScalar
 
 
 
@@ -34,6 +30,7 @@ def enlist(s):
         return [s]
     else:
         return s
+
 
 
 class Changes:
@@ -74,36 +71,6 @@ class Changes:
         self.current_version = version
         self._version_changes = []
 
-    def unify_tree_dfs(self, node):
-        if is_list_node(node):
-            for idx in range(len(node)):
-                node[idx] = self.unify_tree_dfs(node[idx])
-            if type(node) != CommentedSeq:
-                return CommentedSeq(node)
-        elif is_map_node(node):
-            for key, child in node.items():
-                node[key] = self.unify_tree_dfs(child)
-            if type(node) != CommentedMap:
-                return CommentedMap(node)
-        elif is_scalar_node(node):
-            if type(node) != CommentedScalar:
-
-                tags_for_types = { \
-                    float: u'tag:yaml.org,2002:float', \
-                    int: u'tag:yaml.org,2002:int', \
-                    bool: u'tag:yaml.org,2002:bool', \
-                    str: u'tag:yaml.org,2002:str', \
-                    type(None): u'tag:yaml.org,2002:null'}
-                tag = None
-                for x_type, x_tag in tags_for_types.items():
-                    if isinstance(node, x_type):
-                        tag = x_tag
-                # assert type(node) in tags_for_types
-                # tag = tags_for_types[type(node)]
-                return CommentedScalar(tag, node)
-        else:
-            assert False, "Unsupported node type: {}".format(type(node))
-        return node
 
     def close_changes(self):
         if hasattr(self, '_reversed'):
@@ -150,7 +117,7 @@ class Changes:
             self.map_insert = map_insert
         else:
             self.map_insert = self.ALPHABETIC
-        tree = self.unify_tree_dfs(tree)
+        tree = unify_tree_dfs(tree)
 
         assert is_map_node(tree)
 
@@ -196,7 +163,7 @@ class Changes:
                     action()
                     if self.changed:
                         actions.append((ac_name, line_num))
-                    self.tree = self.unify_tree_dfs(self.tree)
+                    self.tree = unify_tree_dfs(self.tree)
         if active in [0, 1]:
             logging.warning("End version %s is not in the change list." % out_version)
         if active in [0, 2]:
@@ -221,10 +188,10 @@ class Changes:
 
             def wrap(*args, **kargs):
                 def forward():
-                    func(*args, reversed=False, **kargs)
+                    func(*args, reverse=False, **kargs)
 
                 def backward():
-                    func(*args, reversed=True, **kargs)
+                    func(*args, reverse=True, **kargs)
 
                 self._version_changes.append((forward, backward, func.__name__, line_number))
 
@@ -258,10 +225,12 @@ class Changes:
         '''
         assert is_map_node(map)
         assert is_map_key(key)
+        scalar_node = unify_tree_dfs(value)
         if key in map:
-            map[key] = value
+            map[key] = scalar_node
 
-        # insert new key
+        # insert new key, mapping is stored as an ordereddict,
+        # like a list of tuples (key, value)
         if hint_idx is not None:
             assert type(hint_idx) == int, "hint: %s" % str(hint_idx)
             index = hint_idx
@@ -272,7 +241,7 @@ class Changes:
                 index = 0
             else:
                 assert False
-        map.insert(index, key, value)
+        map.insert(index, key, scalar_node)
 
 
     def __brace_substitution(self, old, new):
@@ -309,7 +278,7 @@ class Changes:
         '''
         iaddr = []
         node = self.tree
-        for key, tag in addr:
+        for key, tag in addr[1:]:
             if is_map_node(node):
                 idx = self.__idx_for_key(node, key, equal=True)
             else:
@@ -428,6 +397,14 @@ class Changes:
 
 
     def __apply_manual_conv(self, nodes, address, message):
+        """
+        Apply manual conversion to the node.
+        That is, add comment to the node containing the original value and given message.
+        :param nodes:
+        :param address:
+        :param message:
+        :return:
+        """
         if len(nodes) < 2 or not is_map_node(nodes[-2]):
             return
 
@@ -470,7 +447,7 @@ class Changes:
     In general actions do not raise erros but report warnings and just skip the conversion for actual path.
     '''
 
-    def _add_key_to_map(self, paths, key, value, reversed):
+    def _add_key_to_map(self, paths, key, value, reverse):
         '''
         ACTION.
         For every path P in path set 'paths' add key 'key' to the map at path P.
@@ -480,25 +457,25 @@ class Changes:
         REVERSE.
         For every path P in the path set 'path' remove key 'key_name' from the map.
         '''
-        for nodes, address in PathSet(paths).iterate(self.tree):
-            curr = nodes[-1]
+        for adr_node in PathSet(paths).iterate(self.tree):
+            curr = adr_node.yaml_node
             if not is_map_node(curr):
-                logging.warning("Expecting map at path: {}".format(address.s()))
+                logging.warning("Expecting map at path: {}".format(adr_node.address.s()))
                 continue
-            if reversed:
+            if reverse:
                 if key in curr:
                     del curr[key]
                     self.changed = True
             else:
                 if key in curr:
-                    logging.warning("Overwriting key: %s == %s" % (address.s() + '/' + key, curr[key]))
+                    logging.warning("Overwriting key: %s == %s" % (adr_node.address.s() + '/' + key, curr[key]))
                 # Must make deep copy otherwise we share value accross all changed trees
                 # which may cause spurious values in empy maps going form other files.
                 new_val = copy.deepcopy(value)
                 self.__set_map(curr, key, new_val)
                 self.changed = True
 
-    def _set_tag_from_key(self, paths, key, tag, reversed):
+    def _set_tag_from_key(self, paths, key, tag, reverse):
         '''
         ACTION.
         For ever path P in 'paths' which has to be a map. Set 'tag' if the map contains 'key'.
@@ -510,22 +487,22 @@ class Changes:
         :return:
         '''
 
-        for nodes, address in PathSet(paths).iterate(self.tree):
+        for adr_node in PathSet(paths).iterate(self.tree):
 
-            assert is_map_node(nodes[-1]), "Node: {}".format(nodes[-1])
-            if not key in nodes[-1]:
+            assert is_map_node(adr_node.yaml_node), "Node: {}".format(adr_node.yaml_node)
+            if not key in adr_node.yaml_node:
                 continue
 
             self.changed = True
-            if reversed:
-                curr_tag = nodes[-1].tag.value
+            if reverse:
+                curr_tag = adr_node.yaml_node.tag.value
                 if curr_tag and curr_tag != '!' + tag:
                     raise Exception("Deleting wrong tag: {}, expected: {}".format(curr_tag, tag))
-                self.__set_tag(nodes[-1], "")  # remove tag
+                self.__set_tag(adr_node.yaml_node, "")  # remove tag
             else:
-                self.__set_tag(nodes[-1], tag)
+                self.__set_tag(adr_node.yaml_node, tag)
 
-    def _manual_change(self, paths, message_forward, message_backward, reversed):
+    def _manual_change(self, paths, message_forward, message_backward, reverse):
         '''
         ACTION.
         For every path P in the path set 'path' which has to end by key. Rename the key (if invalidate='key')
@@ -533,12 +510,12 @@ class Changes:
         REVERSE.
         For every path P in the path set 'path', make the same, but use message_backward for the comment.
         '''
-        for nodes, address in PathSet(paths).iterate(self.tree):
+        for adr_node in PathSet(paths).iterate(self.tree):
             self.changed = True
-            if reversed:
-                self.__apply_manual_conv(nodes, address, message_backward)
+            if reverse:
+                self.__apply_manual_conv(adr_node.nodes_path, adr_node.address, message_backward)
             else:
-                self.__apply_manual_conv(nodes, address, message_forward)
+                self.__apply_manual_conv(adr_node.nodes_path, adr_node.address, message_forward)
 
     """
     def remove_key(path_set, key_name, key_value):
@@ -552,10 +529,10 @@ class Changes:
     """
 
 
-    def _copy_value(self, new_paths, old_paths, reversed):
-        self._move_value(new_paths, old_paths, reversed, copy_val=True)
+    def _copy_value(self, new_paths, old_paths, reverse):
+        self._move_value(new_paths, old_paths, reverse, copy_val=True)
 
-    def _move_value(self, new_paths, old_paths, reversed, copy_val=False):
+    def _move_value(self, new_paths, old_paths, reverse, copy_val=False):
         """
         ACTION.
         Move a values from 'new_paths' to 'old_paths'.
@@ -579,10 +556,9 @@ class Changes:
            - move value from old path to new path
            - remove any empty map or list in 'old' path
         """
+        rev = reverse
         new_paths = enlist(new_paths)
         old_paths = enlist(old_paths)
-        rev = reversed
-        del reversed
         cases = []
         assert len(new_paths) == len(old_paths)
         for old, new in zip(new_paths, old_paths):
@@ -600,25 +576,25 @@ class Changes:
                 if rev:
                     o_alt, n_alt = n_alt, o_alt
 
-                path_match = [match for match in PathSet(o_alt).iterate(self.tree)]
+                path_match = list(PathSet(o_alt).iterate(self.tree))
                 # if path_match:
                 #    if len(path_match) > 1:
                 #        raise Exception("More then single match for the move path: {}".format(old))
 
                 # Reverse list matches to move list elemenets from end.
 
-                for match in path_match[::-1]:
-                    nodes, addr = match
+                for match in reversed(path_match):
+                    match:AddressNode = match
                     if copy_val:
                         if rev:
-                            self.__remove_value(nodes, addr)
+                            self.__remove_value(match.nodes_path, match.address)
                         else:
-                            value = copy.deepcopy(nodes[-1])
-                            cases.append((value, n_alt, nodes, [], None))
+                            value = copy.deepcopy(match.yaml_node)
+                            cases.append((value, n_alt, match.nodes_path, [], None))
                     else:
-                        orig_idx_addr = self.__idx_addr(addr)
-                        value, comment = self.__remove_value(nodes, addr)
-                        cases.append((value, n_alt, nodes, orig_idx_addr, comment))
+                        orig_idx_addr = self.__idx_addr(match.address)
+                        value, comment = self.__remove_value(match.nodes_path, match.address)
+                        cases.append((value, n_alt, match.nodes_path, orig_idx_addr, comment))
 
         for case in cases:
             self.changed = True
@@ -629,7 +605,7 @@ class Changes:
             self.tree = self.__move_value(value_to_move, [self.tree], path_list, addr, comment)
 
 
-    def _rename_key(self, paths, old_key, new_key, reversed):
+    def _rename_key(self, paths, old_key, new_key, reverse):
         '''
         ACTION.
         For every path P in the path set 'paths', which has to be a map.
@@ -638,17 +614,17 @@ class Changes:
         For every path P in the path set 'paths', rename vice versa.
         TODO: Replace with generalized move_value action, problem where to apply reversed action.
         '''
-        if reversed:
+        if reverse:
             old_key, new_key = new_key, old_key
 
-        for nodes, address in PathSet(paths).iterate(self.tree):
-            curr = nodes[-1]
+        for adr_node in PathSet(paths).iterate(self.tree):
+            curr = adr_node.yaml_node
             if not is_map_node(curr):
-                logging.info("Expecting map at path: {}".format(address))
+                logging.info("Expecting map at path: {}".format(adr_node.address))
                 continue
 
             if not old_key in curr:
-                logging.info("No key {} to rename at {}.".format(old_key, address))
+                logging.info("No key {} to rename at {}.".format(old_key, adr_node.address))
                 continue
 
             self.changed = True
@@ -664,7 +640,7 @@ class Changes:
             if comment:
                 curr.ca.items[new_key] = comment
 
-    def _rename_tag(self, paths, old_tag, new_tag, reversed):
+    def _rename_tag(self, paths, old_tag, new_tag, reverse):
         '''
         ACTION.
         For every path P in the path set 'paths':
@@ -681,10 +657,10 @@ class Changes:
             old_tag = old_tag[1:]
         if new_tag[0] == '!':
             new_tag = new_tag[1:]
-        if reversed:
+        if reverse:
             old_tag, new_tag = new_tag, old_tag
-        for nodes, address in PathSet(paths).iterate(self.tree):
-            curr = nodes[-1]
+        for adr_node in PathSet(paths).iterate(self.tree):
+            curr = adr_node.yaml_node
             assert hasattr(curr, 'tag'), "All nodes should be CommentedXYZ."
 
             self.changed = True
@@ -692,9 +668,9 @@ class Changes:
                 curr.tag.value = "!" + new_tag
             else:
                 logging.warning(
-                    "Current tag: '{}', expected: '{}' at path: {}".format(curr.tag.value[1:], old_tag, address))
+                    "Current tag: '{}', expected: '{}' at path: {}".format(curr.tag.value[1:], old_tag, adr_node.address))
 
-    def _replace_value(self, paths, re_forward, re_backward, reversed):
+    def _replace_value(self, paths, re_forward, re_backward, reverse):
         """
         ACTION.
         For every P in 'paths', apply regexp substitution 're_forward'
@@ -707,55 +683,55 @@ class Changes:
         If regexp is None, then substitute is tuple for the manual conversion.
         :return: None
         """
-        if reversed:
+        if reverse:
             regexp = re_backward
         else:
             regexp = re_forward
-        for nodes, address in PathSet(paths).iterate(self.tree):
-            curr = nodes[-1]
+        for adr_node in PathSet(paths).iterate(self.tree):
+            curr = adr_node.yaml_node
             if not is_scalar_node(curr):
                 # print("Node: ", curr)
-                logging.warning("Expecting scalar at path: {} get: {}".format(address, type(curr)))
+                logging.warning("Expecting scalar at path: {} get: {}".format(adr_node.address, type(curr)))
                 continue
             assert type(curr) == CommentedScalar, "Wrong type: {} {}".format(type(curr))
             if not type(curr.value) == str:
                 # print("Node: ", curr)
-                logging.warning("Expecting string at path: {} get: {}".format(address, type(curr)))
+                logging.warning("Expecting string at path: {} get: {}".format(adr_node.address, type(curr)))
                 continue
 
             self.changed = True
             if regexp[0] is None:
-                self.__apply_manual_conv(nodes, address, regexp[1])  # manual
+                self.__apply_manual_conv(adr_node.nodes_path, adr_node.address, regexp[1])  # manual
             else:
                 curr.value = re.sub(regexp[0], regexp[1], curr.value)
 
 
-    def _change_value(self, paths, old_val, new_val, reversed):
+    def _change_value(self, paths, old_val, new_val, reverse):
         """
         ACTION.
         For every path in 'paths' change value equal to 'old_val' into 'new_val'
         and vice versa for 'reversed'.
         """
-        if reversed:
+        if reverse:
             old_val, new_val = new_val, old_val
 
-        for nodes, address in PathSet(paths).iterate(self.tree):
-            if self.__commented_cmp(nodes[-1], old_val):
-                key = address[-1][0]
-                nodes[-2][key] = copy.deepcopy(new_val)
+        for adr_node in PathSet(paths).iterate(self.tree):
+            if self.__commented_cmp(adr_node.yaml_node, old_val):
+                key = adr_node.address[-1][0]
+                adr_node.nodes_path[-2][key] = copy.deepcopy(new_val)
 
-    def _scale_scalar(self, paths, multiplicator, reversed):
+    def _scale_scalar(self, paths, multiplicator, reverse):
         '''
         ACTION.
         For every path P in the path set 'path' which has to be a scalar, multiply it by 'multiplicator'
         REVERSE.
         For every path P in the path set 'path' which has to be a scalar, divide it by 'multiplicator'
         '''
-        for nodes, address in PathSet(paths).iterate(self.tree):
-            curr = nodes[-1]
+        for adr_node in PathSet(paths).iterate(self.tree):
+            curr = adr_node.yaml_node
             if not is_scalar_node(curr):
                 # print("Node: ", curr)
-                logging.warning("Expecting scalar at path: {} get: {}".format(address, type(curr)))
+                logging.warning("Expecting scalar at path: {} get: {}".format(adr_node.address, type(curr)))
                 continue
             assert type(curr) == CommentedScalar, "Wrong type: {} {}".format(type(curr))
             if not isinstance(curr.value, (int, float)):
@@ -764,7 +740,7 @@ class Changes:
             self.changed = True
             is_int = curr.value is int
             # x_value = curr.value
-            if reversed:
+            if reverse:
                 curr.value /= multiplicator
             else:
                 curr.value *= multiplicator
