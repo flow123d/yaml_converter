@@ -10,21 +10,13 @@ import glob
 source_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-# def yaml_files_cmp(ref,out):
-#     yml = YAMLConverter.get_yaml_serializer()
-#     with open(ref, "r") as f:
-#         t=yml.load(f)
-#     with open(ref, "w") as f:
-#         yml.dump(t, f)
-#     return filecmp.cmp(ref, out)
-
 
 def clean_dir(fname):
     os.remove(fname)
     for f in glob.glob(os.path.splitext(fname)[0] + '.orig??.yaml'):
         os.remove(f)
 
-
+# Using pytest. test arguments are fixtures defined in test/conftest.py
 def test_yaml_forward_converter(flow_yaml_files, yaml_files_cmp):
     yaml_old, yaml_out, yaml_new, yaml_rev, yaml_rrf = flow_yaml_files
     yaml_converter.main(['-o', yaml_out, yaml_old])

@@ -1,3 +1,6 @@
+"""
+Test the command line interface.
+"""
 import yaml_converter
 import os
 import glob
@@ -12,7 +15,6 @@ source_dir = os.path.dirname(os.path.abspath(__file__))
 
 def test_script_undo(yaml_files_cmp):
     fname = os.path.join(source_dir, "test_script_data", "add_key.in.yaml")
-    os.path.join(source_dir, "test_script_data", "add_key.in.yaml")
 
     # save orginal file for refenece
     ref_file_1 = fname + ".ref1"

@@ -10,6 +10,7 @@ from yaml_parser_extra import get_yaml_serializer
 
 
 # Create list of test files for the flow123d_input test.
+# works like a parametrization of the tests with the list of the input files
 def pytest_generate_tests(metafunc):
     if 'flow_yaml_files' in metafunc.fixturenames:
         old_dir = os.path.join(source_dir, "flow123d_input", "yaml_old")
@@ -19,7 +20,7 @@ def pytest_generate_tests(metafunc):
         for basename in os.listdir(old_dir):
             if not re.match('\d\d_[^.]*\.yaml', basename):
                 continue
-            #if basename != '50_exact_2d_nc_p1.yaml':
+            #f basename != '03_flow_vtk.yaml':
             #    continue
             old_file = os.path.join(old_dir, basename)
             new_ref_file = os.path.join(new_dir, basename)
