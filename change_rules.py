@@ -247,6 +247,19 @@ def changes_to_400a01(changes):
                               "((.*)( if )(((.*)",
                               "\\1 if \\3 # Backward conversion of if is not supported. Check and convert formula manually"))
 
+    changes.manual_change("/problem/**/input_fields/#/(gravity_field|bc_gravity|bc_displacement|bc_traction|load)!FieldFormula",
+                          message_forward="Vector FieldFormula must be converted manually to a single string.",
+                          message_backward="Vector FieldFormula must be converted manually to YAML array.")
+    changes.manual_change("/problem/**/input_fields/#/advection_coef!FieldFormula",
+                          message_forward="FieldFormula components of vector Multifield must be converted manually to a single string.",
+                          message_backward="FieldFormula components of vector Multifield must be converted manually to YAML array.")
+    changes.manual_change("/problem/**/input_fields/#/(anisotropy|bc_stress|initial_stress)!FieldFormula",
+                          message_forward="Tensor FieldFormula must be converted manually to a single string.",
+                          message_backward="Tensor FieldFormula must be converted manually to YAML array.")
+    changes.manual_change("/problem/**/input_fields/#/(diffusion_coef|diff_m)!FieldFormula",
+                          message_forward="FieldFormula components of tensor Multifield must be converted manually to a single string.",
+                          message_backward="FieldFormula components of tensor Multifield must be converted manually to YAML array.")
+
 
 def make_changes():
     changes = Changes()
