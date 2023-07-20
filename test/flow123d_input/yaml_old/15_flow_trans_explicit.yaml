@@ -9,7 +9,7 @@ problem: !Coupling_Sequential
         storativity: 1.0
       - region: domain
         anisotropy: !FieldFormula
-          value: [[x^2, 0, 0], [0, y^2, 0], [0, 0, z^2]]
+          value: [x^2, y^2, z^2]
         # default
         cross_section: 1
         # default

@@ -56,7 +56,8 @@ problem: !Coupling_Sequential
         - region: .top
           bc_conc: 3
         - region: domain
-          diff_m: !FieldFormula
+       # FieldFormula components of tensor Multifield must be converted manually to a single string.
+          COMMENTED_diff_m: !FieldFormula
             value: ' ((0) if (y>0.5) else (1e-2)) '
     output_stream:
       file: ./transport.pvd
