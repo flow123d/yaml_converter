@@ -1,50 +1,47 @@
-flow123d_version: 3.1.0
-problem: !Coupling_Sequential
-  description: Simple sorption test - no flow, no transport, known values of sorbed substances.
+problem: !SequentialCoupling
+  description: Simple sorption test - no flow, no transport, known values of sorbed
+    substances.
   mesh:
     mesh_file: input/mesh_simple.msh
-    regions:
-      - !Union
-        name: .boundary
-        regions:
+    sets:
+      - name: .boundary
+        region_labels:
           - .back
           - .front
           - .left
           - .up
           - .down
-  flow_equation: !Flow_Darcy_MH
-    nonlinear_solver:
-      linear_solver: !Petsc
-        a_tol: 1.0e-07
+  primary_equation: !Steady_MH
     input_fields:
       - region: volume
         conductivity: 1.0e-10
-      - region: .boundary
+      - r_set: .boundary
         bc_type: dirichlet
         bc_piezo_head: 0
-    output_stream:
-      file: test_20.pvd
-      format: !vtk
-        variant: ascii
     output:
-      fields:
+      output_stream:
+        file: test_20.pvd
+        format: !vtk
+          variant: ascii
+      output_fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    balance: {}
-  solute_equation: !Coupling_OperatorSplitting
+    balance: true
+    solver: !Petsc
+      a_tol: 1.0e-07
+  secondary_equation: !TransportOperatorSplitting
     substances:
       - A
       - As-lin
       - As-lang
       - As-freund
-    transport: !Solute_Advection_FV
-      input_fields:
-        - region: volume
-          init_conc: 1
-          porosity: 0.25
-        - region: .boundary
-          bc_conc: 1.0
+    input_fields:
+      - region: volume
+        init_conc: 1
+        porosity: 0.25
+      - r_set: .boundary
+        bc_conc: 1.0
     reaction_term: !Sorption
       solvent_density: 1.0
       substances:
@@ -86,8 +83,7 @@ problem: !Coupling_Sequential
       file: transport_test_20.pvd
       format: !vtk
         variant: ascii
-      times:
-        - step: 0.2
+      time_step: 0.2
   # secondary_equation
 # problem
 # root

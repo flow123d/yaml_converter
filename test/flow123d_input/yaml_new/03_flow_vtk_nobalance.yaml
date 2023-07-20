@@ -38,7 +38,6 @@ problem: !Coupling_Sequential
         - velocity_p0
     balance:
       add_output_times: false
-  # primary equation
   solute_equation: !Coupling_OperatorSplitting
     substances:
       - name: age

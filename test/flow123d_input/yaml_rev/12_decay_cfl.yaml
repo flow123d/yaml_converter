@@ -1,48 +1,41 @@
-flow123d_version: 2.0.0
-problem: !Coupling_Sequential
-  description: Test12 - demonstration of unstability of reaction solver without CFL condition
-    (exact solution (50+5*exp(-55*t))/55)
+problem: !SequentialCoupling
+  description: Test12 - demonstration of unstability of reaction solver without CFL condition (exact solution (50+5*exp(-55*t))/55)
   mesh:
     mesh_file: ./input/sit_decay.msh
-  flow_equation: !Flow_Darcy_MH
+  primary_equation: !Unsteady_MH
     output_specific:
     input_fields:
-      - rid: 1
-        anisotropy: 1
-      - region: .BOUNDARY
-        bc_type: dirichlet
+      - r_set: BOUNDARY
+        bc_type:  # :dirichlet  # Select either 'robin' or 'neumann' according to the value of 'bc_flux', 'bc_pressure', 'bc_sigma'.
         bc_piezo_head: 0
     output:
-      fields:
+      output_stream:
+        file: ./decay.pvd
+        format: !vtk
+          variant: ascii
+        name: flow_output_stream
+      output_fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    balance: {}
-    nonlinear_solver:
-      linear_solver: !Petsc
-        a_tol: 1.0e-07
-    output_stream: 
-      file: ./decay.pvd
-      format: !vtk
-        variant: ascii
-      name: flow_output_stream
-  solute_equation: !Coupling_OperatorSplitting
-    transport: !Solute_Advection_FV
-      input_fields:
-        - rid: 1
-          init_conc:
-            - 1
-            - 0
-        - region: .BOUNDARY
-          bc_conc:
-            - 1
-            - 0
-    output_stream: 
+    balance: true
+    solver: !Petsc
+      a_tol: 1.0e-07
+  secondary_equation: !TransportOperatorSplitting
+    input_fields:
+      - rid: 1
+        init_conc:
+          - 1
+          - 0
+      - r_set: BOUNDARY
+        bc_conc:
+          - 1
+          - 0
+    output_stream:
       file: ./transport_decay.pvd
       format: !vtk
         variant: ascii
-      times:
-        - step: 2e-0
+      time_step: 2e+0
     substances:
       - A
       - B

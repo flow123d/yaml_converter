@@ -1,30 +1,29 @@
-flow123d_version: 3.1.0
-problem: !Coupling_Sequential
-  description: Test12 - narrow radioaoctive decay chain, with transport switched enabled but with zero pressure gradient
+problem: !SequentialCoupling
+  description: Test12 - narrow radioaoctive decay chain, with transport switched enabled
+    but with zero pressure gradient
   mesh:
     # mesh_file:"./input/narrow_2d_chanel.msh"
     mesh_file: ./input/dual_por.msh
-  flow_equation: !Flow_Darcy_MH
-    nonlinear_solver:
-      linear_solver: !Petsc
-        a_tol: 1.0e-07
+  primary_equation: !Steady_MH
     input_fields:
-      - region: BULK
+      - r_set: BULK
         conductivity: 1.0
-      - region: .BOUNDARY
+      - r_set: BOUNDARY
         bc_type: dirichlet
         bc_pressure: 0
-    output_stream:
-      file: ./dual_por_flow.pvd
-      format: !vtk
-        variant: ascii
     output:
-      fields:
+      output_stream:
+        file: ./dual_por_flow.pvd
+        format: !vtk
+          variant: ascii
+      output_fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    balance: {}
-  solute_equation: !Coupling_OperatorSplitting
+    balance: true
+    solver: !Petsc
+      a_tol: 1.0e-07
+  secondary_equation: !TransportOperatorSplitting
     substances:
       - A
     time:
@@ -33,13 +32,12 @@ problem: !Coupling_Sequential
     solver: !Petsc
       a_tol: 1.0e-07
       r_tol: 1.0e-07
-    transport: !Solute_Advection_FV
       # options:"-ksp_type gmres -ksp_monitor"
-      input_fields:
-        - region: BULK
-          init_conc:
-            - 1.0
-          porosity: 0.5
+    input_fields:
+      - r_set: BULK
+        init_conc:
+          - 1.0
+        porosity: 0.5
     reaction_term: !DualPorosity
       COMMENT: !Sorption
         decays:
@@ -53,47 +51,45 @@ problem: !Coupling_Sequential
           - 1.0
         input_fields:
           - time: 0.0
-            region: ALL
+            r_set: ALL
             rock_density: 1.0
             sorption_type: none
             isotherm_mult: 0.6
           - time: 4.0
-            region: ALL
+            r_set: ALL
             rock_density: 1.0
             sorption_type: linear
             isotherm_mult: 0.6
       input_fields:
         - time: 0.0
-          region: ALL
+          r_set: ALL
           diffusion_rate_immobile:
             - 0.0
           porosity_immobile: 0.1
           init_conc_immobile:
             - 0.01
         - time: 3.0
-          region: BULK
+          r_set: BULK
           porosity_immobile: 0.2
         - time: 4.0
-          region: BULK
+          r_set: BULK
           diffusion_rate_immobile:
             - 0.001
         - time: 6.0
-          region: BULK
+          r_set: BULK
           diffusion_rate_immobile: !FieldFormula
             value: if(t>=7.0,0.01,0.001)
           porosity_immobile: !FieldFormula
             value: if(t>8.0,0.5,0.2)
           # change porosity
-      output:
-        fields:
-          - conc_immobile
-          - porosity_immobile
+      output_fields:
+        - conc_immobile
+        - porosity_immobile
     balance:
       cumulative: true
     output_stream:
       file: dual_por_transport.pvd
       format: !vtk
         variant: ascii
-      times:
-        - step: 1.0
+      time_step: 1.0
 # problem

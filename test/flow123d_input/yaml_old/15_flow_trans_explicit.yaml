@@ -1,12 +1,9 @@
-flow123d_version: 3.1.0
-problem: !Coupling_Sequential
+problem: !SequentialCoupling
   description: Test15 - 2D unsteady flow LM
   mesh:
     mesh_file: ./input/channel_unstructured.msh
-  flow_equation: !Flow_Richards_LMH
+  primary_equation: !Unsteady_LMH
     input_fields:
-      - region: ALL
-        storativity: 1.0
       - region: domain
         anisotropy: !FieldFormula
           value: [x^2, y^2, z^2]
@@ -19,48 +16,44 @@ problem: !Coupling_Sequential
       - region: .left
         bc_type: dirichlet
         bc_pressure: 0
-    nonlinear_solver:
-      linear_solver: !Petsc
-        a_tol: 1.0e-12
-        r_tol: 1.0e-12
     n_schurs: 2
-    output_stream:
-      file: ./test15.pvd
-      format: !vtk
-        variant: ascii
-      times:
-        - step: 0.1
-      name: flow_output_stream
     output:
-      fields:
+      output_stream: 
+        file: ./test15.pvd
+        format: !vtk
+          variant: ascii
+        time_step: 0.1
+        name: flow_output_stream
+      output_fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
     balance:
       cumulative: true
+    solver: !Petsc
+      a_tol: 1.0e-12
+      r_tol: 1.0e-12
     time:
       end_time: 2.0
       max_dt: 0.01
       min_dt: 0.01
-  solute_equation: !Coupling_OperatorSplitting
-    transport: !Solute_Advection_FV
-      input_fields:
-        - region: domain
-          init_conc: 0
-        - region: .left
-          bc_type: dirichlet
-          bc_conc: 10
-          time: 0.0
-        - region: .left
-          bc_type: dirichlet
-          bc_conc: 0
-          time: 0.1
-    output_stream:
+  secondary_equation: !TransportOperatorSplitting
+    input_fields:
+      - region: domain
+        init_conc: 0
+      - region: .left
+        bc_type: dirichlet
+        bc_conc: 10
+        time: 0.0
+      - region: .left
+        bc_type: dirichlet
+        bc_conc: 0
+        time: 0.1
+    output_stream: 
       file: ./transport.pvd
       format: !vtk
         variant: ascii
-      times:
-        - step: 0.1
+      time_step: 0.1
       name: transport_output_stream
     substances:
       - conc
@@ -73,13 +66,12 @@ problem: !Coupling_Sequential
       solubility:
         - 1.0
       input_fields:
-        - region: ALL
+        - r_set: ALL
           rock_density: 1.0
           sorption_type: linear
           isotherm_mult: 0.6
           isotherm_other: 0.4
-      output:
-        fields: []
+      output_fields: []
     time:
       end_time: 2.0
     balance:

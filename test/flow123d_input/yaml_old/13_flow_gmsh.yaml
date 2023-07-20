@@ -1,15 +1,11 @@
-flow123d_version: 3.1.0
-problem: !Coupling_Sequential
+problem: !SequentialCoupling
   time: &anchor3
     end_time: 100.0
-  description: Test13 - mixing of substances on edges and quantitative test on trivial transport problem.
+  description: Test13 - mixing of substances on edges and quantitative test on trivial
+    transport problem.
   mesh:
     mesh_file: input/Y_branch.msh
-  flow_equation: !Flow_Darcy_MH
-    nonlinear_solver:
-      linear_solver: !Petsc
-        a_tol: 1.0e-14
-        r_tol: 1.0e-14
+  primary_equation: !Steady_MH
     input_fields:
       - region: trunk
         anisotropy: 1.0
@@ -26,30 +22,31 @@ problem: !Coupling_Sequential
       - region: .right_branch
         bc_type: dirichlet
         bc_pressure: -5
-    output_stream:
-      file: test13.msh
-      format: !gmsh
-        variant: ascii
-      name: flow_output_stream
     output:
-      fields:
+      output_stream: 
+        file: test13.msh
+        format: !gmsh
+          variant: ascii
+        name: flow_output_stream
+      output_fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    balance: {}
-  solute_equation: !Coupling_OperatorSplitting
-    transport: !Solute_Advection_FV
-      input_fields:
-        - region: BULK
-          init_conc: 0
-        - region: .trunk
-          bc_conc: 1
-    output_stream:
+    balance: true
+    solver: !Petsc
+      a_tol: 1.0e-14
+      r_tol: 1.0e-14
+  secondary_equation: !TransportOperatorSplitting
+    input_fields:
+      - r_set: BULK
+        init_conc: 0
+      - region: .trunk
+        bc_conc: 1
+    output_stream: 
       file: transport.msh
       format: !gmsh
         variant: ascii
-      times:
-        - step: 0.5
+      time_step: 0.5
       name: transport_output_stream
     substances:
       - A

@@ -1,24 +1,17 @@
-flow123d_version: 3.1.0
-problem: !Coupling_Sequential
+problem: !SequentialCoupling
   description: Test2 - Transport 1D-2D (convection, dual porosity, sorption)
   mesh:
     mesh_file: ./input/compatible.msh
-    regions:
-      - !Union
-        name: .sides
-        regions:
-          - .2d
-          - .1d
-      - !Union
-        name: subset
-        regions:
+    sets:
+      - name: subset
+        region_labels:
           - 2d
           - 1d
-  flow_equation: !Flow_Darcy_MH
-    nonlinear_solver:
-      linear_solver: !Petsc
-        a_tol: 1.0e-12
-        r_tol: 1.0e-12
+      - name: .sides
+        region_labels:
+          - .2d
+          - .1d
+  primary_equation: !Steady_MH
     input_fields:
       - region: 1d
         anisotropy: 10
@@ -32,48 +25,47 @@ problem: !Coupling_Sequential
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: x
-    balance: {}
-    output_stream:
-      file: ./test2.pvd
-      format: !vtk
-        variant: ascii
-      name: flow_output_stream
+    balance: true
     output:
-      fields:
+      output_stream:
+        file: ./test2.pvd
+        format: !vtk
+          variant: ascii
+        name: flow_output_stream
+      output_fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
         - region_id
-  solute_equation: !Coupling_OperatorSplitting
-    transport: !Solute_AdvectionDiffusion_DG
-      solvent_density: 1000
-      dg_order: 1
-      solver: !Petsc
-      output:
-        fields:
-          - conc
-          - region_id
-      input_fields:
-        - region: .sides
-          bc_conc: 1
-        - region: subset
-          init_conc: 0
-          porosity: 0.25
-        - region: 2d
-          rock_density: 2700
-          sorption_mult:
-            - 0.2
-            - 0
-        - region: .sides
-          time: 5
-          bc_conc: 0
+    solver: !Petsc
+      a_tol: 1.0e-12
+      r_tol: 1.0e-12
+  secondary_equation: !SoluteTransport_DG
+    input_fields:
+      - r_set: .sides
+        bc_conc: 1
+      - r_set: subset
+        init_conc: 0
+        porosity: 0.25
+      - region: 2d
+        rock_density: 2700
+        sorption_mult:
+          - 0.2
+          - 0
+      - r_set: .sides
+        time: 5
+        bc_conc: 0
+    dg_order: 1
+    solvent_density: 1000
     output_stream:
       file: ./transport_dg.pvd
       format: !vtk
         variant: ascii
-      times:
-        - step: 1
+      time_step: 1
       name: transport_output_stream
+    output_fields:
+      - conc
+      - region_id
     substances:
       - name: A
         molar_mass: 2
@@ -84,3 +76,4 @@ problem: !Coupling_Sequential
     balance:
       file: mass_balance_dg.txt
       cumulative: true
+    solver: !Petsc

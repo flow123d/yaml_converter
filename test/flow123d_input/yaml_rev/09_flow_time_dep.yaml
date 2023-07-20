@@ -1,40 +1,38 @@
-flow123d_version: 3.1.0
-problem: !Coupling_Sequential
+problem: !SequentialCoupling
   description: Test10 - Unsteady flow in 2D, Mixed Hybrid method
   mesh:
-    mesh_file: $INPUT_DIR$/square_2d.msh
-  flow_equation: !Flow_Darcy_MH
-    nonlinear_solver:
-      linear_solver: !Petsc
-        a_tol: 1.0e-07
+    mesh_file: ${INPUT}/square_2d.msh
+  primary_equation: !Steady_MH
     input_fields:
       - region: plane
         conductivity: 1
-      - region: .BOUNDARY
+      - r_set: BOUNDARY
         time: 0
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: '0'
-      - region: .BOUNDARY
+      - r_set: BOUNDARY
         time: 1
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: x
-      - region: .BOUNDARY
+      - r_set: BOUNDARY
         time: 2
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: 2*x
     n_schurs: 2
     output:
-      add_input_times: true
-      fields:
+      output_stream:
+        add_input_times: true
+        file: ./test09.pvd
+        format: !vtk
+          variant: ascii
+        name: flow_output_stream
+      output_fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    output_stream:
-      file: ./test09.pvd
-      format: !vtk
-        variant: ascii
-      name: flow_output_stream
-    balance: {}
+    balance: true
+    solver: !Petsc
+      a_tol: 1.0e-07

@@ -1,24 +1,17 @@
-flow123d_version: 3.1.0
-problem: !Coupling_Sequential
+problem: !SequentialCoupling
   description: Test2 - Transport 1D-2D (convection, dual porosity, sorption)
   mesh:
-    mesh_file: $INPUT_DIR$/compatible.msh
-    regions:
-      - !Union
-        name: .sides
-        regions:
-          - .2d
-          - .1d
-      - !Union
-        name: subset
-        regions:
+    mesh_file: ${INPUT}/compatible.msh
+    sets:
+      - name: subset
+        region_labels:
           - 2d
           - 1d
-  flow_equation: !Flow_Darcy_MH
-    nonlinear_solver:
-      linear_solver: !Petsc
-        a_tol: 1.0e-12
-        r_tol: 1.0e-12
+      - name: .sides
+        region_labels:
+          - .2d
+          - .1d
+  primary_equation: !Steady_MH
     input_fields:
       - region: 1d
         anisotropy: 10
@@ -27,46 +20,46 @@ problem: !Coupling_Sequential
       - region: 2d
         anisotropy: 1
         cross_section: 1
-      - region: .sides
+      - r_set: .sides
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: x
-    balance: {}
-    output_stream:
-      file: ./test2.pvd
-      format: !vtk
-        variant: ascii
+    balance: true
     output:
-      fields:
+      output_stream:
+        file: ./test2.pvd
+        format: !vtk
+          variant: ascii
+      output_fields:
         - pressure_p0
         - pressure_p1
         - velocity_p0
         - region_id
-  solute_equation: !Coupling_OperatorSplitting
-    transport: !Solute_Advection_FV
-      input_fields:
-        - region: .sides
-          bc_conc: !FieldFormula
-            value: x/12.75
-        - region: subset
-          init_conc: 0
-          porosity: 0.25
-        - region: ALL
-          init_conc: !FieldFE
-            mesh_data_file: $INPUT_DIR$/test18_init.msh
-            field_name: concentration
-          diff_m: 0.1
-          dg_penalty: 100
-      output:
-        fields:
-          - conc
-          - region_id
+    solver: !Petsc
+      a_tol: 1.0e-12
+      r_tol: 1.0e-12
+  secondary_equation: !TransportOperatorSplitting
+    input_fields:
+      - r_set: .sides
+        bc_conc: !FieldFormula
+          value: x/12.75
+      - r_set: subset
+        init_conc: 0
+        porosity: 0.25
+      - r_set: ALL
+        init_conc: !FieldElementwise
+          gmsh_file: ${INPUT}/test18_init.msh
+          field_name: concentration
+        diff_m: 0.1
+        dg_penalty: 100
     output_stream:
       file: ./transport.pvd
       format: !vtk
         variant: ascii
-      times:
-        - step: 0.5
+      time_step: 0.5
+    output_fields:
+      - conc
+      - region_id
     substances:
       - A
       - B
@@ -76,7 +69,7 @@ problem: !Coupling_Sequential
       cumulative: true
     reaction_term: !DualPorosity
       input_fields:
-        - region: subset
+        - r_set: subset
           diffusion_rate_immobile:
             - 0.01
             - 0.01
@@ -84,6 +77,7 @@ problem: !Coupling_Sequential
           init_conc_immobile:
             - 0.0
             - 0.0
+      output_fields: []
       reaction_mobile: !SorptionMobile
         solvent_density: 1.0
         substances:
@@ -93,7 +87,7 @@ problem: !Coupling_Sequential
           - 1.0
           - 1.0
         input_fields:
-          - region: subset
+          - r_set: subset
             rock_density: 1.0
             sorption_type:
               - linear
@@ -102,8 +96,7 @@ problem: !Coupling_Sequential
             isotherm_other:
               - 0
               - 0.5
-        output:
-          fields: []
+        output_fields: []
       reaction_immobile: !SorptionImmobile
         solvent_density: 1.0
         substances:
@@ -113,7 +106,7 @@ problem: !Coupling_Sequential
           - 1.0
           - 1.0
         input_fields:
-          - region: subset
+          - r_set: subset
             rock_density: 1.0
             sorption_type:
               - linear
@@ -122,7 +115,4 @@ problem: !Coupling_Sequential
             isotherm_other:
               - 0
               - 0.5
-        output:
-          fields: []
-      output:
-        fields: []
+        output_fields: []

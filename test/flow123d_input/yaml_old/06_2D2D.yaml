@@ -1,12 +1,9 @@
-flow123d_version: 3.1.0
-problem: !Coupling_Sequential
-  description: 2D2D test - Steady flow in 2D block with fracture, fracture as 2D porous subdomain
+problem: !SequentialCoupling
+  description: 2D2D test - Steady flow in 2D block with fracture, fracture as 2D porous
+    subdomain
   mesh:
     mesh_file: ./input/2D2D.msh
-  flow_equation: !Flow_Darcy_MH
-    nonlinear_solver:
-      linear_solver: !Petsc
-        accuracy: 1.0e-07
+  primary_equation: !Steady_MH
     n_schurs: 2
     data:
       - region: 2d_porous_block_left
@@ -41,16 +38,17 @@ problem: !Coupling_Sequential
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: '1.0'
-    output_specific:
-      raw_flow_output: ./raw_output.txt
-    output_stream:
-      file: ./2D2D_flow.msh
-      format: !gmsh
-        variant: ascii
-      name: flow_output_stream
     output:
       balance_output: balance.out
+      output_stream: 
+        file: ./2D2D_flow.msh
+        format: !gmsh
+          variant: ascii
+        name: flow_output_stream
       piezo_head_p0: flow_output_stream
       pressure_p0: flow_output_stream
       pressure_p1: flow_output_stream
+      raw_flow_output: ./raw_output.txt
       velocity_p0: flow_output_stream
+    solver: !Petsc
+      accuracy: 1.0e-07
