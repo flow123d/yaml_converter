@@ -12,9 +12,8 @@ Features:
 - can be applied to the input format specification and check that it produce target format specification
 
 '''
-from path_set import PathSet
-from YAMLConverter import Changes
-from yaml_parser_extra import CommentedMap, CommentedSeq, CommentedScalar
+
+from ymlconv import Changes, PathSet, CommentedMap, CommentedScalar
 
 def changes_to_200rc(changes):
 
@@ -168,7 +167,7 @@ def changes_to_300(changes):
     changes.rename_key("/problem/**/input_fields/#/*!(FieldElementwise|FieldInterpolatedP0|FieldInterpolatedP1)/", old_key="gmsh_file", new_key="mesh_data_file")
 
 
-def changes_to_310(changes):
+def changes_to_310(changes: Changes):
     changes.replace_value("/problem/**/(mesh_data_file|mesh_file|script_file)/",
                           re_forward=("\$\{INPUT\}", "$INPUT_DIR$"),
                           re_backward=("\$INPUT_DIR\$","\$\{INPUT\}"))

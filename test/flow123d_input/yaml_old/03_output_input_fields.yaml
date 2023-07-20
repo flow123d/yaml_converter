@@ -31,10 +31,11 @@ problem: !SequentialCoupling
         - velocity_p0
         - conductivity
         - anisotropy
-    balance: true
     solver: !Petsc
       a_tol: 1.0e-12
       r_tol: 1.0e-12
+    balance: true
+  # primary equation
   secondary_equation: !TransportOperatorSplitting
     substances:
       - age

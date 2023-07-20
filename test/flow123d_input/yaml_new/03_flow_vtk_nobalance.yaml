@@ -37,6 +37,7 @@ problem: !Coupling_Sequential
         - pressure_p1
         - velocity_p0
     balance:
+    # primary equation
       add_output_times: false
   solute_equation: !Coupling_OperatorSplitting
     substances:

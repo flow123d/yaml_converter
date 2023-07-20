@@ -3,11 +3,12 @@
 import itertools
 import re
 import logging
-from yaml_parser_extra import iterate_nodes, Address, is_scalar_node
+from .yaml_parser_extra import AddressNode, is_scalar_node
 
 
 
-
+def remove_prefix(text, prefix):
+    return text[text.startswith(prefix) and len(prefix):]
 
 
 
@@ -70,7 +71,8 @@ class PathSet(object):
                 if len(l) != 4:
                     assert True
                 base_p, tail_p, value_p, _ = l
-                tail_p = self.make_path_re(base_p + "/" + tail_p)
+                if tail_p:
+                    tail_p = self.make_path_re(base_p + "/" + tail_p)
                 base_p = self.make_path_re(base_p)
 
 
@@ -83,6 +85,9 @@ class PathSet(object):
 
     def make_path_re(self, path_pattern):
         pp = path_pattern + '/'
+        # we process all '*' to '@' to avoid double porcessing,
+        # we then replace '@' back to '*' at the end
+
         # '**' = any number of levels, any key or index per level
         pp = re.sub('\*\*', '[a-zA-Z0-9_]@(/[a-zA-Z0-9_]@)@', pp)
         # '*' = single level, any key or index per level
@@ -92,14 +97,14 @@ class PathSet(object):
         # merge multiple '/'
         pp = re.sub('/+', '/', pp)
         # '/' = allow tag info just after key names
-        pp = re.sub('/', '(![a-zA-Z0-9_]@)?/', pp)
+        pp = re.sub('/', '(!!?[a-zA-Z0-9_]@)?/', pp)
         # return back all starts
         pp = re.sub('@', '*', pp)
         pp = pp.strip('/')
         pp = "^" + pp + "$"
         return re.compile(pp)
 
-    def iterate(self, tree):
+    def iterate(self, root_node):
         """
         Generator that iterates over all paths valid both in path set and in the tree.
          Yields (nodes, address) pair. 'nodes' is list of all nodes from the root down to the
@@ -109,10 +114,11 @@ class PathSet(object):
         address - address of current node including the tag specification if the tag is set
         """
         logging.debug("Patterns: {}".format(self.patterns))
-        for nodes, address in iterate_nodes([tree], Address()):
-            if self.match(nodes, address):
+        root_an = AddressNode.root(root_node)
+        for adr_node in root_an.iterate_nodes():
+            if self.match(adr_node):
                 logging.debug("Match path")
-                yield (nodes, address)
+                yield (adr_node)
 
 
     # @staticmethod
@@ -120,17 +126,19 @@ class PathSet(object):
     #    return tag is None or PathSet.get_node_tag(node) == tag
 
 
-    def match(self, data_path, path):
-        path = str(path).strip('/')
+    def match(self, adr_node:AddressNode):
+        path = str(adr_node.address)
+        path = remove_prefix(path, '/!!map')
+        path = path.lstrip('/')
         for pattern, tail_pattern, value_pattern in self.patterns:
             # Check match in base path.
             if pattern.match(path) is None:
                 continue
 
             # check existence of tail_path
-            if tail_pattern is not None:
-                for _, address in iterate_nodes(data_path, path):
-                    if tail_pattern.match(address):
+            if tail_pattern:
+                for an in adr_node.iterate_nodes():
+                    if tail_pattern.match(an.address):
                         break
                 else:
                     # No match of tail
@@ -138,7 +146,7 @@ class PathSet(object):
 
             # check match of value
             if value_pattern is not None:
-                if not self.match_value(value_pattern, data_path[-1]):
+                if not self.match_value(value_pattern, adr_node.yaml_node):
                     continue
 
             return True

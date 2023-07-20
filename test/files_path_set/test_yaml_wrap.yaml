@@ -1,0 +1,12 @@
+ # YAML wrapper accept no tags for map keys, only for the final values
+# default !!seq tag
+a: !!seq
+  - !MyType 1
+  - !!int 2
+b: !!map
+  a: # defualt !!seq tag
+    - !!str 2
+c: !MySeq
+  - 1
+d: !MyMap
+  a: 2
