@@ -12,9 +12,8 @@ Features:
 - can be applied to the input format specification and check that it produce target format specification
 
 '''
-from path_set import PathSet
-from YAMLConverter import Changes
-from yaml_parser_extra import CommentedMap, CommentedSeq, CommentedScalar
+
+from ymlconv import Changes, PathSet, CommentedMap, CommentedScalar
 
 def changes_to_200rc(changes):
 

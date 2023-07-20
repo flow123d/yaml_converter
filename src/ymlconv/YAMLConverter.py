@@ -16,13 +16,12 @@ Compatible with ruamel.yaml 0.15.31
 '''
 import ruamel.yaml as ruml
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
-from yaml_parser_extra import is_map_node, is_list_node, is_scalar_node, is_map_key, CommentedScalar
 import re
 import logging
 import copy
 import inspect
-from path_set import PathSet
-from yaml_parser_extra import unify_tree_dfs, AddressNode
+from .path_set import PathSet
+from .yaml_parser_extra import unify_tree_dfs, AddressNode, is_map_node, is_list_node, is_scalar_node, is_map_key, CommentedScalar
 
 
 

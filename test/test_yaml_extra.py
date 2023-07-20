@@ -4,7 +4,7 @@ provided in yaml_parse_extra.
 
 """
 import os
-from yaml_parser_extra import load_commented_yaml, AddressNode
+from ymlconv.yaml_parser_extra import load_commented_yaml, AddressNode
 
 source_dir = os.path.dirname(os.path.abspath(__file__))
 

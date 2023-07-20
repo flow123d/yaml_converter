@@ -1,7 +1,6 @@
 import os
-import re
-from path_set import PathSet
-from yaml_parser_extra import get_yaml_serializer, load_commented_yaml
+from ymlconv.path_set import PathSet
+from ymlconv.yaml_parser_extra import load_commented_yaml
 
 source_dir = os.path.dirname(os.path.abspath(__file__))
 

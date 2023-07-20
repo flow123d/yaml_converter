@@ -3,7 +3,7 @@
 import itertools
 import re
 import logging
-from yaml_parser_extra import AddressNode, is_scalar_node
+from .yaml_parser_extra import AddressNode, is_scalar_node
 
 
 

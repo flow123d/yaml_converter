@@ -1,9 +1,9 @@
 import pytest
 import os
 from shutil import copyfile
-from yaml_parser_extra import get_yaml_serializer, CommentedMap
-from path_set import PathSet
-from YAMLConverter import Changes
+from ymlconv.yaml_parser_extra import get_yaml_serializer, CommentedMap
+from ymlconv.path_set import PathSet
+from ymlconv.YAMLConverter import Changes
 
 source_dir = os.path.dirname(os.path.abspath(__file__))
 

@@ -1,8 +1,5 @@
 import pytest
-import filecmp
-import yaml_converter
-from shutil import copyfile
-import YAMLConverter
+from ymlconv import yaml_converter
 import os
 import glob
 #from subprocess import call

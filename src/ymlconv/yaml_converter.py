@@ -14,10 +14,6 @@ Features:
 Compatible with ruamel.yaml 0.15.31
 
 '''
-from yaml_parser_extra import get_yaml_serializer
-from YAMLConverter import Changes
-#from YAMLConverter import
-
 import re
 import os
 import sys
@@ -26,6 +22,11 @@ import fnmatch
 import logging
 import glob
 from shutil import copyfile
+
+from .yaml_parser_extra import get_yaml_serializer
+from .YAMLConverter import Changes
+
+from .change_rules import make_changes
 
 
 class ExcFailedConversion(Exception):
@@ -131,8 +132,6 @@ def main(cmd_args = None):
 
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     log = logging.getLogger('Converter')
-
-    from change_rules import make_changes
     changes = make_changes()
 
     args = get_parsed_args(cmd_args)

@@ -1,11 +1,11 @@
 """
 Test the command line interface.
 """
-import yaml_converter
+from ymlconv import yaml_converter
 import os
 import glob
 from shutil import copyfile
-import YAMLConverter
+
 import filecmp
 
 source_dir = os.path.dirname(os.path.abspath(__file__))
