@@ -5,8 +5,8 @@ problem: !SequentialCoupling
   primary_equation: !Unsteady_LMH
     input_fields:
       - region: domain
-        anisotropy: !FieldFormula
-          value: [x^2, y^2, z^2]
+        anisotropy: !FieldConstant
+          value: [2, 3, 4]
         # default
         cross_section: 1
         # default
@@ -15,7 +15,8 @@ problem: !SequentialCoupling
         init_piezo_head: 0
       - region: .left
         bc_type: dirichlet
-        bc_pressure: 0
+        bc_pressure: !FieldFormula
+          value: x^2
     n_schurs: 2
     output:
       output_stream: 

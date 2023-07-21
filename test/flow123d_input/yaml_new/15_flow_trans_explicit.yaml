@@ -8,9 +8,8 @@ problem: !Coupling_Sequential
       - region: ALL
         storativity: 1.0
       - region: domain
-     # Tensor FieldFormula must be converted manually to a single string.
-        COMMENTED_anisotropy: !FieldFormula
-          value: [x**2, y**2, z**2]
+        anisotropy: !FieldConstant
+          value: [2, 3, 4]
         # default
         cross_section: 1
         # default
@@ -19,7 +18,8 @@ problem: !Coupling_Sequential
         init_piezo_head: 0
       - region: .left
         bc_type: dirichlet
-        bc_pressure: 0
+        bc_pressure: !FieldFormula
+          value: x**2
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-12
