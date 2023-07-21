@@ -38,6 +38,7 @@ problem: !Coupling_Sequential
         - conductivity
         - anisotropy
     balance: {}
+  # primary equation
   solute_equation: !Coupling_OperatorSplitting
     substances:
       - age
