@@ -44,7 +44,7 @@ problem: !Coupling_Sequential
       - region: dirichlet_boundary
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: x-z
+          value: X[0]-X[2]
     balance: {}
     output_specific:
       raw_flow_output: ./raw_output.txt

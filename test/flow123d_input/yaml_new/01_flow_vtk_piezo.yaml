@@ -29,7 +29,7 @@ problem: !Coupling_Sequential
       - region: .BOUNDARY
         bc_type: dirichlet
         bc_piezo_head: !FieldFormula
-          value: x
+          value: X[0]
     balance: {}
     output_stream:
       file: ./test1.pvd

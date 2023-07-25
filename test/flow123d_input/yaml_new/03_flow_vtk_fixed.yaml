@@ -22,7 +22,7 @@ problem: !Coupling_Sequential
       - conductivity: 1.0e-07
         region: 2d
       - bc_pressure: !FieldFormula
-          value: x+y
+          value: X[0]+X[1]
         bc_type: dirichlet
         region: .BOUNDARY
     output:

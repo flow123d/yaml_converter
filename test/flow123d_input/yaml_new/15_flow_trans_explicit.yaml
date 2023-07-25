@@ -14,12 +14,12 @@ problem: !Coupling_Sequential
         cross_section: 1
         # default
         water_source_density: !FieldFormula
-          value: -x
+          value: -X[0]
         init_piezo_head: 0
       - region: .left
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: x**2
+          value: X[0]**2
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-12

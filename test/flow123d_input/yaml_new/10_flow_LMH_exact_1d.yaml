@@ -31,7 +31,7 @@ problem: !Coupling_Sequential
         conductivity: 0.5
         cross_section: 1.0
         init_pressure: !FieldFormula
-          value: sin(pi/2*x)
+          value: sin(pi/2*X[0])
       - region: .bc_inflow
         bc_type: dirichlet
         bc_pressure: 0

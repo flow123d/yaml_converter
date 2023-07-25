@@ -14,7 +14,7 @@ problem: !Coupling_Sequential
       - region: .BOUNDARY
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: x
+          value: X[0]
     n_schurs: 2
     output_stream:
       file: ./test14.pvd
