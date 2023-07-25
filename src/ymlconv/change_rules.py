@@ -259,6 +259,40 @@ def changes_to_400a01(changes):
                           message_forward="FieldFormula components of tensor Multifield must be converted manually to a single string.",
                           message_backward="FieldFormula components of tensor Multifield must be converted manually to YAML array.")
 
+    path_set = PathSet(["/problem/**/input_fields/#/*!FieldFormula/value/",
+                        "/problem/**/input_fields/#/*!FieldFormula/value/#/",
+                        "/problem/**/input_fields/#/*!FieldFormula/value/#/#/",
+                        "/problem/**/user_fields/#/*!FieldFormula/value/",
+                        "/problem/**/user_fields/#/*!FieldFormula/value/#/",
+                        "/problem/**/user_fields/#/*!FieldFormula/value/#/#/"])
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w]?)x([^\\w])", "\\1X[0]\\2"),
+                         re_backward=("X[0]","x"))
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w])x([^\\w]?)", "\\1X[0]\\2"),
+                         re_backward=("X[0]","x"))
+    changes.replace_value(path_set,
+                         re_forward=("^(x)$", "X[0]"),
+                         re_backward=("X[0]","x"))
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w]?)y([^\\w])", "\\1X[1]\\2"),
+                         re_backward=("X[1]","y"))
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w])y([^\\w]?)", "\\1X[1]\\2"),
+                         re_backward=("X[1]","y"))
+    changes.replace_value(path_set,
+                         re_forward=("^(y)$", "X[1]"),
+                         re_backward=("X[1]","y"))
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w]?)z([^\\w])", "\\1X[2]\\2"),
+                         re_backward=("X[2]","z"))
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w])z([^\\w]?)", "\\1X[2]\\2"),
+                         re_backward=("X[2]","z"))
+    changes.replace_value(path_set,
+                         re_forward=("^(z)$", "X[2]"),
+                         re_backward=("X[2]","z"))
+
 
 def make_changes():
     changes = Changes()
