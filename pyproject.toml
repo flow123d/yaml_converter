@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ymlconv"
-version = "4.0.0a01"    # test version info
+#version = "4.0.0a01"    # test version info
 authors = [
     {name = "Jan Březina", email = "jan.brezina@tul.cz"},
 ]
