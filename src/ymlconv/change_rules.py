@@ -199,6 +199,7 @@ def changes_to_400a01(changes):
                         "/problem/**/user_fields/#/*!FieldFormula/value/#/",
                         "/problem/**/user_fields/#/*!FieldFormula/value/#/#/"])
 
+    # Conversion rules of FieldFormula change syntax to BParser format.
     changes.replace_value(path_set,
                          re_forward=("\^", "**"),
                          re_backward=("\*\*","^"))
@@ -246,6 +247,7 @@ def changes_to_400a01(changes):
                               "((.*)( if )(((.*)",
                               "\\1 if \\3 # Backward conversion of if is not supported. Check and convert formula manually"))
 
+    # Values of vector/tensor FieldFormulas must be change manually to single string
     changes.manual_change("/problem/**/input_fields/#/(gravity_field|bc_gravity|bc_displacement|bc_traction|load)!FieldFormula",
                           message_forward="Vector FieldFormula must be converted manually to a single string.",
                           message_backward="Vector FieldFormula must be converted manually to YAML array.")
@@ -265,6 +267,7 @@ def changes_to_400a01(changes):
                         "/problem/**/user_fields/#/*!FieldFormula/value/",
                         "/problem/**/user_fields/#/*!FieldFormula/value/#/",
                         "/problem/**/user_fields/#/*!FieldFormula/value/#/#/"])
+    # Three following rules change variable 'x' (x-coordinate) to X[0]
     changes.replace_value(path_set,
                          re_forward=("([^\\w]?)x([^\\w])", "\\1X[0]\\2"),
                          re_backward=("X[0]","x"))
@@ -274,6 +277,7 @@ def changes_to_400a01(changes):
     changes.replace_value(path_set,
                          re_forward=("^(x)$", "X[0]"),
                          re_backward=("X[0]","x"))
+    # Same rules for conversion 'y' to X[1]
     changes.replace_value(path_set,
                          re_forward=("([^\\w]?)y([^\\w])", "\\1X[1]\\2"),
                          re_backward=("X[1]","y"))
@@ -283,6 +287,7 @@ def changes_to_400a01(changes):
     changes.replace_value(path_set,
                          re_forward=("^(y)$", "X[1]"),
                          re_backward=("X[1]","y"))
+    # And for conversion 'z' to X[2]
     changes.replace_value(path_set,
                          re_forward=("([^\\w]?)z([^\\w])", "\\1X[2]\\2"),
                          re_backward=("X[2]","z"))
