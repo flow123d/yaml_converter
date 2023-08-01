@@ -11,6 +11,7 @@ problem: !Coupling_Sequential
       - region: .IMPLICIT_BOUNDARY
         bc_type: dirichlet
         bc_piezo_head: !FieldFE
+          is_boundary: 'true'
           interpolation: P0_intersection
           mesh_data_file: $INPUT_DIR$/large_cube_solution.msh
           field_name: piezo_head_elements_[L]

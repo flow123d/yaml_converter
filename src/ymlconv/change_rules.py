@@ -298,6 +298,15 @@ def changes_to_400a01(changes):
                          re_forward=("^(z)$", "X[2]"),
                          re_backward=("X[2]","z"))
 
+    # Add is_boundary key to boundary FieldFE
+    path_set = PathSet(["/problem/**/input_fields/#/(bc_type|bc_pressure|bc_flux|bc_robin_sigma|bc_gravity)!FieldFE",
+                        "/problem/**/input_fields/#/(bc_switch_pressure|bc_piezo_head|bc_switch_piezo_head)!FieldFE",
+                        "/problem/**/input_fields/#/(bc_displacement|bc_traction|bc_stress)!FieldFE",
+                        "/problem/**/input_fields/#/(bc_dirichlet_value|bc_robin_sigma|bc_conc)!FieldFE",
+                        "/problem/**/input_fields/#/(bc_type|bc_dirichlet_value|bc_flux|bc_robin_sigma|bc_conc)/#!FieldFE"])
+    changes.add_key_to_map(path_set, key="is_boundary", value="true")
+
+
 
 def make_changes():
     changes = Changes()
