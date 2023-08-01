@@ -1,7 +1,6 @@
-flow123d_version: 2.0.0
+flow123d_version: 4.0.0a01
 problem: !Coupling_Sequential
-  description: 'Tutorial problem: Transport 1D-2D (convection, dual porosity, sorption,
-    sources).'
+  description: 'Tutorial problem: Transport 1D-2D (convection, dual porosity, sorption, sources).'
   mesh:
     mesh_file: ./input/mesh_with_boundary.msh
   # mesh
@@ -30,7 +29,7 @@ problem: !Coupling_Sequential
       - region: .BOUNDARY
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: x+y
+          value: X[0]+X[1]
     output:
       fields:
         - pressure_p0
@@ -65,11 +64,11 @@ problem: !Coupling_Sequential
       # uranium 235
     time:
       end_time: 1000000.0
-    balance: 
-        add_output_times: true
-        times:
-            - step: 200000.0
-            - 300000.0
+    balance:
+      add_output_times: true
+      times:
+        - step: 200000.0
+        - 300000.0
     output_stream:
       file: transport.pvd
       format: !vtk

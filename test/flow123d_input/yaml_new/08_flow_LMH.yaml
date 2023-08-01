@@ -1,8 +1,8 @@
-flow123d_version: 2.0.0
+flow123d_version: 4.0.0a01
 problem: !Coupling_Sequential
   description: Test8 - Steady flow with sources
   mesh:
-    mesh_file: ${INPUT}/test08.msh
+    mesh_file: $INPUT_DIR$/test08.msh
   flow_equation: !Flow_Richards_LMH
     output_specific:
     nonlinear_solver:
@@ -13,7 +13,7 @@ problem: !Coupling_Sequential
       - region: plane
         anisotropy: 1
         water_source_density: !FieldFormula
-          value: 2*(1-x^2)+2*(1-y^2)
+          value: 2*(1-X[0]**2)+2*(1-X[1]**2)
       - region: .plane_boundary
         bc_type: dirichlet
         bc_pressure: 0
@@ -23,7 +23,7 @@ problem: !Coupling_Sequential
         - pressure_p0
         - pressure_p1
         - velocity_p0
-    output_stream: 
+    output_stream:
       file: ./flow.pvd
       format: !vtk
         variant: ascii

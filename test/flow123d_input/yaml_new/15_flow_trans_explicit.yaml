@@ -1,4 +1,4 @@
-flow123d_version: 3.1.0
+flow123d_version: 4.0.0a01
 problem: !Coupling_Sequential
   description: Test15 - 2D unsteady flow LM
   mesh:
@@ -8,16 +8,18 @@ problem: !Coupling_Sequential
       - region: ALL
         storativity: 1.0
       - region: domain
-        anisotropy: 1
+        anisotropy: !FieldConstant
+          value: [2, 3, 4]
         # default
         cross_section: 1
         # default
         water_source_density: !FieldFormula
-          value: -x
+          value: -X[0]
         init_piezo_head: 0
       - region: .left
         bc_type: dirichlet
-        bc_pressure: 0
+        bc_pressure: !FieldFormula
+          value: X[0]**2
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: 1.0e-12

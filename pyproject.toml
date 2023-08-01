@@ -13,7 +13,7 @@ readme = "README.md"
 requires-python = ">=3.7"
 keywords = ["YAML", "rules based conversion of file structure", "Flow123d"]
 license = {text = "GNU-3"}
-dependencies = ["ruamel.yaml==0.17.21", "regexp"]
+dependencies = ["ruamel.yaml==0.17.21", "regex"]
 # ruamel.yaml - enables praservation of the YAML structure in read /write loop
 # regexp - PERL extensions
 dynamic = ["version"]

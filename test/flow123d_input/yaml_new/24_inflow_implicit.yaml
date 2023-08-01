@@ -1,4 +1,4 @@
-flow123d_version: 3.1.0
+flow123d_version: 4.0.0a01
 problem: !Coupling_Sequential
   description: Test of boundary conditions for transport
   mesh:
@@ -9,10 +9,32 @@ problem: !Coupling_Sequential
         a_tol: 1.0e-12
         r_tol: 1.0e-12
     input_fields:
-      - region: .BOUNDARY
+      - region: .right
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: (x-0.5)*y
+          value: (X[0]-0.5)*X[1]
+      - region: .left
+        bc_type: dirichlet
+        bc_pressure: !FieldFormula
+          value: sub = X[0]-0.5; sub*X[1]
+      - region: .bottom
+        bc_type: dirichlet
+        bc_pressure: !FieldFormula
+          value: ' (( 0) if (t==0) else ( minimum(X[0]-0.5,X[1]))) '
+      - region: .top
+        bc_type: dirichlet
+        bc_pressure: !FieldFormula
+          value: ' (( 0) if (X[0]<0.5) else (  (( 1) if (X[0]>1.5) else ( X[0]-0.5)) )) '
+      - region: .front
+        bc_type: dirichlet
+        bc_pressure: !FieldFormula
+          value: ' (( 0) if ((X[0]<0.5) and (X[1]>0) or (X[0]>0.5) and (X[1]<0)) else ( (X[0]-0.5)*X[1])) '
+      - region: .back
+        bc_type: dirichlet
+        bc_pressure: !FieldFormula
+          value: 'if(t==0, 0,  (( 1) if (t<=1) else (  (( 2) if (t<=2) else (  (( 3) if (t<=3) else (  (( 4) if (t<=4) else
+            (  (( 5) if (t<=5) else ( X[0]-0.5)) )) )) )) )) ) # More than 5 nested if commands are not supported. Please
+            fiX[0] formula manuallX[1].'
     output_stream:
       file: ./flow.pvd
       format: !vtk
@@ -34,8 +56,9 @@ problem: !Coupling_Sequential
         - region: .top
           bc_conc: 3
         - region: domain
-          diff_m: !FieldFormula
-            value: if(y>0.5,0,1e-2)
+       # FieldFormula components of tensor Multifield must be converted manually to a single string.
+          COMMENTED_diff_m: !FieldFormula
+            value: ' ((0) if (X[1]>0.5) else (1e-2)) '
     output_stream:
       file: ./transport.pvd
       format: !vtk

@@ -1,4 +1,4 @@
-flow123d_version: 3.1.0
+flow123d_version: 4.0.0a01
 problem: !Coupling_Sequential
   description: Test2 - Transport 1D-2D (convection, dual porosity, sorption)
   mesh:
@@ -30,7 +30,7 @@ problem: !Coupling_Sequential
       - region: .sides
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: x
+          value: X[0]
     balance:
       format: gnuplot
     output_stream:
@@ -58,7 +58,7 @@ problem: !Coupling_Sequential
       input_fields:
         - region: .sides
           bc_conc: !FieldFormula
-            value: x/12.75
+            value: X[0]/12.75
         - region: subset
           init_conc: 0
           porosity: 0.25

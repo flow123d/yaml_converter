@@ -1,4 +1,4 @@
-flow123d_version: 3.1.0
+flow123d_version: 4.0.0a01
 problem: !Coupling_Sequential
   description: Test14 - 2D transport with time variable boundary
   mesh:
@@ -15,7 +15,7 @@ problem: !Coupling_Sequential
       - region: .BOUNDARY
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: 0.1*x
+          value: 0.1*X[0]
     n_schurs: 2
     output_stream:
       file: ./test14.pvd

@@ -1,4 +1,4 @@
-flow123d_version: 3.1.0
+flow123d_version: 4.0.0a01
 problem: !Coupling_Sequential
   description: Test05 - Steady flow with Dirichlet/Neumann/Newton boundary condition
   mesh:
@@ -14,15 +14,15 @@ problem: !Coupling_Sequential
       - region: .bc_south
         bc_type: total_flux
         bc_flux: !FieldFormula
-          value: -(x)
+          value: -(X[0])
       - region: .bc_east
         bc_type: dirichlet
         bc_pressure: !FieldFormula
-          value: y
+          value: X[1]
       - region: .bc_north
         bc_type: total_flux
         bc_flux: !FieldFormula
-          value: -(-x)
+          value: -(-X[0])
       - region: .bc_west
         bc_type: dirichlet
         bc_pressure: 0

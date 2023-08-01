@@ -191,6 +191,123 @@ def changes_to_310(changes: Changes):
                             value="P0_intersection")
     changes.rename_tag("/problem/**/input_fields/#/*!FieldInterpolatedP0", old_tag="FieldInterpolatedP0", new_tag="FieldFE")
 
+def changes_to_400a01(changes):
+    path_set = PathSet(["/problem/**/input_fields/#/*!FieldFormula/value/",
+                        "/problem/**/input_fields/#/*!FieldFormula/value/#/",
+                        "/problem/**/input_fields/#/*!FieldFormula/value/#/#/",
+                        "/problem/**/user_fields/#/*!FieldFormula/value/",
+                        "/problem/**/user_fields/#/*!FieldFormula/value/#/",
+                        "/problem/**/user_fields/#/*!FieldFormula/value/#/#/"])
+
+    # Conversion rules of FieldFormula change syntax to BParser format.
+    changes.replace_value(path_set,
+                         re_forward=("\^", "**"),
+                         re_backward=("\*\*","^"))
+    changes.replace_value(path_set,
+                         re_forward=("max\(", "maximum("),
+                         re_backward=("maximum\(", "max(") )
+    changes.replace_value(path_set,
+                         re_forward=("min\(", "minimum("),
+                         re_backward=("minimum\(", "min(") )
+    changes.replace_value(path_set,
+                         re_forward=("Pi", "pi"),
+                         re_backward=("pi", "Pi") )
+    changes.replace_value(path_set,
+                         re_forward=("E", "e"),
+                         re_backward=("e", "E") )
+    changes.replace_value(path_set,
+                         re_forward=("!", " not "),
+                         re_backward=(" not ", "!") )
+    changes.replace_value(path_set,
+                         re_forward=("&", " and "),
+                         re_backward=(" and ", "&") )
+    changes.replace_value(path_set,
+                         re_forward=("\|", " or "),
+                         re_backward=(" or ", "|") )
+    changes.replace_value(path_set,
+                         re_forward=("([^><:])=", "\\1=="),
+                         re_backward=("==", "=") )
+    changes.replace_value(path_set,
+                         re_forward=(":=", "="),
+                         re_backward=("([^><=])=([^=])", "\\1:=\\2") )
+    # only forward conversion of if is supported, maximal number of nested if commands is 5
+    for i in range(5):
+        changes.replace_value(path_set,
+                             re_forward=(
+                                 "(.*)(if\()((?P<RR>(?:[^()]*)|((?:[^()]*)\((?P>RR)\)(?:[^()]*))*)),((?P>RR)),((?P>RR))(\))(.*)",
+                                 "\\1 ((\\6) if (\\3) else (\\7)) \\9"
+                             ),
+                             re_backward=("if", "if") )
+    changes.replace_value(path_set,
+                          re_forward=(
+                              "(.*)(if\()(.*)",
+                              "\\1if(\\3 # More than 5 nested if commands are not supported. Please fix formula manually."
+                          ),
+                          re_backward=(
+                              "((.*)( if )(((.*)",
+                              "\\1 if \\3 # Backward conversion of if is not supported. Check and convert formula manually"))
+
+    # Values of vector/tensor FieldFormulas must be change manually to single string
+    changes.manual_change("/problem/**/input_fields/#/(gravity_field|bc_gravity|bc_displacement|bc_traction|load)!FieldFormula",
+                          message_forward="Vector FieldFormula must be converted manually to a single string.",
+                          message_backward="Vector FieldFormula must be converted manually to YAML array.")
+    changes.manual_change("/problem/**/input_fields/#/advection_coef!FieldFormula",
+                          message_forward="FieldFormula components of vector Multifield must be converted manually to a single string.",
+                          message_backward="FieldFormula components of vector Multifield must be converted manually to YAML array.")
+    changes.manual_change("/problem/**/input_fields/#/(anisotropy|bc_stress|initial_stress)!FieldFormula",
+                          message_forward="Tensor FieldFormula must be converted manually to a single string.",
+                          message_backward="Tensor FieldFormula must be converted manually to YAML array.")
+    changes.manual_change("/problem/**/input_fields/#/(diffusion_coef|diff_m)!FieldFormula",
+                          message_forward="FieldFormula components of tensor Multifield must be converted manually to a single string.",
+                          message_backward="FieldFormula components of tensor Multifield must be converted manually to YAML array.")
+
+    path_set = PathSet(["/problem/**/input_fields/#/*!FieldFormula/value/",
+                        "/problem/**/input_fields/#/*!FieldFormula/value/#/",
+                        "/problem/**/input_fields/#/*!FieldFormula/value/#/#/",
+                        "/problem/**/user_fields/#/*!FieldFormula/value/",
+                        "/problem/**/user_fields/#/*!FieldFormula/value/#/",
+                        "/problem/**/user_fields/#/*!FieldFormula/value/#/#/"])
+    # Three following rules change variable 'x' (x-coordinate) to X[0]
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w]?)x([^\\w])", "\\1X[0]\\2"),
+                         re_backward=("X[0]","x"))
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w])x([^\\w]?)", "\\1X[0]\\2"),
+                         re_backward=("X[0]","x"))
+    changes.replace_value(path_set,
+                         re_forward=("^(x)$", "X[0]"),
+                         re_backward=("X[0]","x"))
+    # Same rules for conversion 'y' to X[1]
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w]?)y([^\\w])", "\\1X[1]\\2"),
+                         re_backward=("X[1]","y"))
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w])y([^\\w]?)", "\\1X[1]\\2"),
+                         re_backward=("X[1]","y"))
+    changes.replace_value(path_set,
+                         re_forward=("^(y)$", "X[1]"),
+                         re_backward=("X[1]","y"))
+    # And for conversion 'z' to X[2]
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w]?)z([^\\w])", "\\1X[2]\\2"),
+                         re_backward=("X[2]","z"))
+    changes.replace_value(path_set,
+                         re_forward=("([^\\w])z([^\\w]?)", "\\1X[2]\\2"),
+                         re_backward=("X[2]","z"))
+    changes.replace_value(path_set,
+                         re_forward=("^(z)$", "X[2]"),
+                         re_backward=("X[2]","z"))
+
+    # Add is_boundary key to boundary FieldFE
+    path_set = PathSet(["/problem/**/input_fields/#/(bc_type|bc_pressure|bc_flux|bc_robin_sigma|bc_gravity)!FieldFE",
+                        "/problem/**/input_fields/#/(bc_switch_pressure|bc_piezo_head|bc_switch_piezo_head)!FieldFE",
+                        "/problem/**/input_fields/#/(bc_displacement|bc_traction|bc_stress)!FieldFE",
+                        "/problem/**/input_fields/#/(bc_dirichlet_value|bc_robin_sigma|bc_conc)!FieldFE",
+                        "/problem/**/input_fields/#/(bc_type|bc_dirichlet_value|bc_flux|bc_robin_sigma|bc_conc)/#!FieldFE"])
+    changes.add_key_to_map(path_set, key="is_boundary", value="true")
+
+
+
 def make_changes():
     changes = Changes()
 
@@ -211,4 +328,7 @@ def make_changes():
     changes.new_version("3.0.0_dev")
     changes_to_310(changes)
     changes.new_version("3.1.0")
+
+    changes_to_400a01(changes)
+    changes.new_version("4.0.0a01")
     return changes

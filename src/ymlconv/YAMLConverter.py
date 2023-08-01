@@ -16,7 +16,7 @@ Compatible with ruamel.yaml 0.15.31
 '''
 import ruamel.yaml as ruml
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
-import re
+import regex as re
 import logging
 import copy
 import inspect

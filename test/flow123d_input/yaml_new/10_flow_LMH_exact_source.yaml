@@ -7,7 +7,7 @@
 # Check that source works well with Dirichlet BC
 #
 
-flow123d_version: 2.0.0
+flow123d_version: 4.0.0a01
 problem: !Coupling_Sequential
   description: Test15 - 2D unsteady flow LM
   mesh:
@@ -45,7 +45,7 @@ problem: !Coupling_Sequential
 #      end_time: 1.0
 #      max_dt: 0.01
 #      min_dt: 0.01
-    output_stream: 
+    output_stream:
       file: ./test15.pvd
       format: !vtk
         variant: ascii

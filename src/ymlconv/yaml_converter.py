@@ -14,7 +14,7 @@ Features:
 Compatible with ruamel.yaml 0.15.31
 
 '''
-import re
+import regex as re
 import os
 import sys
 import argparse
